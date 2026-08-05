@@ -195,9 +195,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .research-statement > p:last-child { max-width: 610px; margin: 40px 0 0; font-size: clamp(18px, 1.5vw, 23px); }
 .publication { position: relative; padding: 34px; background: var(--paper); box-shadow: 14px 14px 0 var(--ink); }
 .publication-mark { position: absolute; right: 28px; top: 22px; font-family: var(--serif); font-size: 50px; font-style: italic; color: var(--signal); }
-.publication h3 { margin: 55px 0 20px; font-size: clamp(27px, 3vw, 45px); line-height: 1.08; letter-spacing: -.045em; }
-.publication > p:not(.eyebrow) { color: var(--muted); }
-.publication-status { display: inline-block; margin-top: 20px; padding: 7px 10px; background: var(--ink); color: var(--white); font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .07em; }
+.publication-list { margin: 52px 0 0; padding: 0; list-style: none; counter-reset: papers; }
+.publication-list li { counter-increment: papers; border-top: 1px solid var(--line); }
+.publication-list li::before { display: block; margin-top: 14px; color: var(--signal); font-family: var(--mono); font-size: 9px; content: "0" counter(papers); }
+.publication-list a { padding: 5px 0 18px; display: grid; gap: 7px; text-decoration: none; }
+.publication-list strong { font-size: clamp(20px, 2vw, 29px); font-weight: 560; line-height: 1.08; letter-spacing: -.035em; }
+.publication-list span { color: var(--muted); font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.publication-list a:hover strong, .publication-list a:focus-visible strong { color: var(--signal); }
 .education-strip { margin-top: 110px; padding-top: 30px; display: grid; grid-template-columns: 25% 1fr; border-top: 1px solid var(--ink); }
 .education-strip h3 { margin: 0; max-width: 900px; font-size: clamp(25px, 3vw, 46px); line-height: 1.1; letter-spacing: -.045em; }
 .education-strip div p { margin: 12px 0 0; }
