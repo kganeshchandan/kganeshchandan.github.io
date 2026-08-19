@@ -10,9 +10,10 @@ const updateHeader = () => header?.classList.toggle('is-scrolled', window.scroll
 updateHeader();
 window.addEventListener('scroll', updateHeader, { passive: true });
 
-const closeMenu = () => {
+const closeMenu = (returnFocus = false) => {
   menuToggle?.setAttribute('aria-expanded', 'false');
   nav?.classList.remove('is-open');
+  if (returnFocus) menuToggle?.focus();
 };
 
 menuToggle?.addEventListener('click', () => {
@@ -20,9 +21,9 @@ menuToggle?.addEventListener('click', () => {
   menuToggle.setAttribute('aria-expanded', String(!open));
   nav?.classList.toggle('is-open', !open);
 });
-nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()));
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeMenu();
+  if (event.key === 'Escape') closeMenu(true);
 });
 
 const graph = document.querySelector('[data-graph]');
@@ -37,22 +38,22 @@ if (graph) {
     {
       id: 'ganesh', label: 'Ganesh', kind: 'root', group: 'all', tx: 450, ty: 315, radius: 43,
       description: 'Software engineer and AI researcher connecting scientific questions, human signals, and intelligent machines.',
-      meta: { Focus: 'Robotics & AI', Base: 'Bangalore, India' }
+      meta: { Focus: 'Robotics & AI', Base: 'Bangalore, India' }, link: 'resume.html'
     },
     {
       id: 'iiith', label: 'IIIT-H', kind: 'place', group: 'research', tx: 390, ty: 105, radius: 32,
       description: 'Integrated B.Tech and M.S. by Research, followed by three years of computational-science research.',
-      meta: { Period: '2019–2024', Recognition: 'Academic Research Award' }, link: '#journey'
+      meta: { Period: '2019–2024', Recognition: 'Academic Research Award' }, link: 'timeline.html#year-2021'
     },
     {
       id: 'samsung', label: 'Samsung', kind: 'place', group: 'professional', tx: 690, ty: 310, radius: 34,
       description: 'Senior Software Engineer in the Advanced Research and Standards Team, currently focused on robotics and AI.',
-      meta: { Since: 'July 2024', Awards: 'Excellence · Spot' }, link: '#journey'
+      meta: { Since: 'July 2024', Awards: 'Excellence · Spot' }, link: 'resume.html'
     },
     {
       id: 'virtual-labs', label: 'Virtual Labs', kind: 'place', group: 'build', tx: 380, ty: 545, radius: 31,
       description: 'Interactive Three.js simulations of solid-state chemistry experiments for a Ministry of Education initiative.',
-      meta: { Role: 'Software Developer', Period: '2022–2023' }, link: '#journey'
+      meta: { Role: 'Software Developer', Period: '2022–2023' }, link: 'timeline.html#year-2022'
     },
     {
       id: 'molecular-ai', label: 'Molecular AI', kind: 'domain', group: 'research', tx: 215, ty: 220, radius: 34,
@@ -87,12 +88,12 @@ if (graph) {
     {
       id: 'smen', label: 'SMEN', kind: 'project', group: 'research', tx: 190, ty: 95, radius: 27,
       description: 'A spectra-and-molecule encoder network for ranking and generating molecular structures from infrared spectra.',
-      meta: { Result: '81% Top-1 · 99% Top-10', Status: 'Peer reviewed' }, link: 'https://doi.org/10.1039/D4DD00135D'
+      meta: { Evidence: 'Peer-reviewed evaluation', Status: 'Digital Discovery, 2024' }, link: 'https://doi.org/10.1039/D4DD00135D'
     },
     {
       id: 'molgpt', label: 'MolGPT 2.0', kind: 'project', group: 'research', tx: 75, ty: 180, radius: 30,
       description: 'Multi-objective molecular generation using transformer encoder-decoder models and direct preference optimization.',
-      meta: { Result: '>95% validity & novelty', Role: 'Initial codebase author' }, link: 'https://github.com/devalab/MolGPT2.0'
+      meta: { Evaluation: 'Checkpoint-dependent', Role: 'Initial codebase author' }, link: 'https://github.com/devalab/MolGPT2.0'
     },
     {
       id: 'bias-study', label: 'Bias study', kind: 'project', group: 'research', tx: 85, ty: 330, radius: 29,
@@ -157,14 +158,35 @@ if (graph) {
   const panelDescription = panel.querySelector('[data-panel-description]');
   const panelMeta = panel.querySelector('[data-panel-meta]');
   const panelLink = panel.querySelector('[data-panel-link]');
+  const resultCount = document.querySelector('[data-result-count]');
+  const mobileView = window.matchMedia('(max-width: 720px)').matches;
+  const defaultView = mobileView
+    ? { x: 250, y: 0, width: 400, height: 640 }
+    : { x: 0, y: 0, width: 900, height: 640 };
+  let currentView = { ...defaultView };
   let selectedId = null;
+  let lastFocusedNode = null;
   let activeFilter = 'all';
   let searchTerm = '';
   let dragging = null;
+  let panning = null;
   let pointerOffset = { x: 0, y: 0 };
   let running = false;
   let animationFrame;
   let settleFrames = 0;
+
+  const setView = (view) => {
+    const width = Math.min(1400, Math.max(300, view.width));
+    const height = width * (defaultView.height / defaultView.width);
+    currentView = {
+      x: Math.max(-250, Math.min(1150 - width, view.x)),
+      y: Math.max(-180, Math.min(820 - height, view.y)),
+      width,
+      height
+    };
+    graph.setAttribute('viewBox', `${currentView.x} ${currentView.y} ${currentView.width} ${currentView.height}`);
+  };
+  setView(currentView);
 
   const makeSvg = (name, attributes = {}) => {
     const element = document.createElementNS(SVG_NS, name);
@@ -172,10 +194,9 @@ if (graph) {
     return element;
   };
 
-  nodes.forEach((node, index) => {
-    const angle = (index / nodes.length) * Math.PI * 2;
-    node.x = width / 2 + Math.cos(angle) * 8;
-    node.y = height / 2 + Math.sin(angle) * 8;
+  nodes.forEach((node) => {
+    node.x = node.tx;
+    node.y = node.ty;
     node.vx = 0;
     node.vy = 0;
     node.spawned = false;
@@ -245,7 +266,7 @@ if (graph) {
         const distanceSquared = Math.max(dx * dx + dy * dy, 80);
         const distance = Math.sqrt(distanceSquared);
         const minimum = a.radius + b.radius + 18;
-        const force = distance < minimum ? (minimum - distance) * .018 : 150 / distanceSquared;
+        const force = distance < minimum ? (minimum - distance) * .04 : 180 / distanceSquared;
         dx /= distance;
         dy /= distance;
         if (a !== dragging) { a.vx -= dx * force; a.vy -= dy * force; }
@@ -268,8 +289,8 @@ if (graph) {
 
     visibleNodes.forEach((node) => {
       if (node === dragging) return;
-      node.vx += (node.tx - node.x) * .0018;
-      node.vy += (node.ty - node.y) * .0018;
+      node.vx += (node.tx - node.x) * .004;
+      node.vy += (node.ty - node.y) * .004;
       node.vx *= .88;
       node.vy *= .88;
       node.x = Math.max(node.radius + 10, Math.min(width - node.radius - 10, node.x + node.vx));
@@ -319,7 +340,13 @@ if (graph) {
       node.element.classList.toggle('is-muted', Boolean(mutedByFilter || mutedBySelection));
       node.element.classList.toggle('is-match', Boolean(searchTerm && matching.has(node.id)));
       node.element.classList.toggle('is-selected', node.id === selectedId);
+      node.element.setAttribute('tabindex', mutedByFilter ? '-1' : '0');
+      node.element.setAttribute('aria-hidden', String(mutedByFilter));
     });
+    if (resultCount) {
+      const label = matching.size === 1 ? 'node' : 'nodes';
+      resultCount.textContent = `${matching.size} ${label} shown · 28 relationships`;
+    }
     links.forEach((link) => {
       const filterMuted = !matching.has(link.source) || !matching.has(link.target);
       const related = selectedId && (link.source === selectedId || link.target === selectedId);
@@ -328,8 +355,9 @@ if (graph) {
     });
   };
 
-  const inspectNode = (node) => {
+  const inspectNode = (node, moveFocus = false) => {
     selectedId = node.id;
+    lastFocusedNode = node;
     panelType.textContent = node.kind === 'paper' ? 'Publication' : node.kind === 'place' ? 'Institution' : node.kind === 'domain' ? 'Domain' : node.kind === 'root' ? 'Profile' : 'Project';
     panelTitle.textContent = node.label;
     panelDescription.textContent = node.description;
@@ -345,8 +373,9 @@ if (graph) {
     if (node.link) {
       panelLink.hidden = false;
       panelLink.href = node.link;
-      panelLink.textContent = node.link.startsWith('#') ? 'Explore section ↘' : 'Open source ↗';
-      if (!node.link.startsWith('#')) {
+      const external = node.link.startsWith('http');
+      panelLink.textContent = external ? 'Open source ↗' : 'Explore page →';
+      if (external) {
         panelLink.target = '_blank';
         panelLink.rel = 'noreferrer';
       } else {
@@ -358,12 +387,14 @@ if (graph) {
     }
     panel.classList.add('is-open');
     applyVisibility();
+    if (moveFocus) panel.focus();
   };
 
-  const closePanel = () => {
+  const closePanel = (returnFocus = true) => {
     selectedId = null;
     panel.classList.remove('is-open');
     applyVisibility();
+    if (returnFocus && lastFocusedNode?.element.getAttribute('tabindex') === '0') lastFocusedNode.element.focus();
   };
 
   const clientToGraph = (event) => {
@@ -380,7 +411,7 @@ if (graph) {
     node.element.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        inspectNode(node);
+        inspectNode(node, true);
       }
     });
     node.element.addEventListener('pointerdown', (event) => {
@@ -413,15 +444,65 @@ if (graph) {
       setTimeout(() => { node.moved = false; }, 0);
       reheat();
     });
+    node.element.addEventListener('pointercancel', () => {
+      dragging = null;
+      node.moved = false;
+      graph.classList.remove('is-dragging');
+      reheat();
+    });
   });
 
-  document.querySelector('[data-panel-close]')?.addEventListener('click', closePanel);
+  graph.addEventListener('pointerdown', (event) => {
+    if (event.target.closest('.graph-node')) return;
+    panning = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, view: { ...currentView } };
+    graph.setPointerCapture(event.pointerId);
+    graph.classList.add('is-dragging');
+  });
+  graph.addEventListener('pointermove', (event) => {
+    if (!panning || panning.pointerId !== event.pointerId) return;
+    const rect = graph.getBoundingClientRect();
+    setView({
+      ...panning.view,
+      x: panning.view.x - (event.clientX - panning.clientX) * (panning.view.width / rect.width),
+      y: panning.view.y - (event.clientY - panning.clientY) * (panning.view.height / rect.height)
+    });
+  });
+  const stopPanning = () => {
+    panning = null;
+    graph.classList.remove('is-dragging');
+  };
+  graph.addEventListener('pointerup', stopPanning);
+  graph.addEventListener('pointercancel', stopPanning);
+
+  const zoomAt = (factor, point = { x: currentView.x + currentView.width / 2, y: currentView.y + currentView.height / 2 }) => {
+    const newWidth = currentView.width * factor;
+    const xRatio = (point.x - currentView.x) / currentView.width;
+    const yRatio = (point.y - currentView.y) / currentView.height;
+    const newHeight = newWidth * (defaultView.height / defaultView.width);
+    setView({ x: point.x - xRatio * newWidth, y: point.y - yRatio * newHeight, width: newWidth, height: newHeight });
+  };
+  graph.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    zoomAt(event.deltaY > 0 ? 1.12 : .89, clientToGraph(event));
+  }, { passive: false });
+  document.querySelectorAll('[data-graph-zoom]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (button.dataset.graphZoom === 'reset') setView({ ...defaultView });
+      else zoomAt(button.dataset.graphZoom === 'in' ? .8 : 1.25);
+    });
+  });
+
+  document.querySelector('[data-panel-close]')?.addEventListener('click', () => closePanel());
 
   document.querySelectorAll('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
       activeFilter = button.dataset.filter;
-      document.querySelectorAll('[data-filter]').forEach((item) => item.classList.toggle('is-active', item === button));
-      closePanel();
+      document.querySelectorAll('[data-filter]').forEach((item) => {
+        const active = item === button;
+        item.classList.toggle('is-active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      closePanel(false);
       applyVisibility();
     });
   });
@@ -460,4 +541,16 @@ if (graph) {
   atlasObserver.observe(graph);
 
   window.addEventListener('pagehide', () => cancelAnimationFrame(animationFrame));
+}
+
+const scrollProgress = document.querySelector('[data-scroll-progress]');
+if (scrollProgress) {
+  const updateProgress = () => {
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+    scrollProgress.style.transform = `scaleX(${Math.min(1, Math.max(0, progress))})`;
+  };
+  updateProgress();
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress);
 }
