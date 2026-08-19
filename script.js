@@ -1,9 +1,10 @@
 const header = document.querySelector('[data-header]');
 const menuToggle = document.querySelector('[data-menu-toggle]');
 const nav = document.querySelector('[data-nav]');
-const year = document.querySelector('[data-year]');
 
-if (year) year.textContent = new Date().getFullYear();
+document.querySelectorAll('[data-year]').forEach((year) => {
+  year.textContent = new Date().getFullYear();
+});
 
 const updateHeader = () => header?.classList.toggle('is-scrolled', window.scrollY > 12);
 updateHeader();
@@ -19,8 +20,444 @@ menuToggle?.addEventListener('click', () => {
   menuToggle.setAttribute('aria-expanded', String(!open));
   nav?.classList.toggle('is-open', !open);
 });
-
 nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeMenu();
 });
+
+const graph = document.querySelector('[data-graph]');
+
+if (graph) {
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const width = 900;
+  const height = 640;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const nodes = [
+    {
+      id: 'ganesh', label: 'Ganesh', kind: 'root', group: 'all', tx: 450, ty: 315, radius: 43,
+      description: 'Software engineer and AI researcher connecting scientific questions, human signals, and intelligent machines.',
+      meta: { Focus: 'Robotics & AI', Base: 'Bangalore, India' }
+    },
+    {
+      id: 'iiith', label: 'IIIT-H', kind: 'place', group: 'research', tx: 390, ty: 105, radius: 32,
+      description: 'Integrated B.Tech and M.S. by Research, followed by three years of computational-science research.',
+      meta: { Period: '2019–2024', Recognition: 'Academic Research Award' }, link: '#journey'
+    },
+    {
+      id: 'samsung', label: 'Samsung', kind: 'place', group: 'professional', tx: 690, ty: 310, radius: 34,
+      description: 'Senior Software Engineer in the Advanced Research and Standards Team, currently focused on robotics and AI.',
+      meta: { Since: 'July 2024', Awards: 'Excellence · Spot' }, link: '#journey'
+    },
+    {
+      id: 'virtual-labs', label: 'Virtual Labs', kind: 'place', group: 'build', tx: 380, ty: 545, radius: 31,
+      description: 'Interactive Three.js simulations of solid-state chemistry experiments for a Ministry of Education initiative.',
+      meta: { Role: 'Software Developer', Period: '2022–2023' }, link: '#journey'
+    },
+    {
+      id: 'molecular-ai', label: 'Molecular AI', kind: 'domain', group: 'research', tx: 215, ty: 220, radius: 34,
+      description: 'Generative models and learned representations for molecules, properties, and drug discovery.',
+      meta: { Methods: 'GNNs · GPT · Diffusion', Domain: 'Scientific AI' }
+    },
+    {
+      id: 'multimodal', label: 'Multimodal', kind: 'domain', group: 'research', tx: 330, ty: 300, radius: 31,
+      description: 'Learning shared representations across molecular graphs, spectra, images, language, and neural signals.',
+      meta: { Modalities: 'Graphs · Spectra · fMRI', Method: 'Contrastive learning' }
+    },
+    {
+      id: 'biosensing', label: 'Biosensing', kind: 'domain', group: 'professional', tx: 630, ty: 185, radius: 32,
+      description: 'AI for wearable PPG and audio signals, including heart health, hydration, glucose, and machine health.',
+      meta: { Evidence: '2 patents filed', Platform: 'Wearable edge devices' }
+    },
+    {
+      id: 'robotics', label: 'Robotics', kind: 'domain', group: 'professional', tx: 765, ty: 405, radius: 32,
+      description: 'Current exploration of embodied intelligence, robotics, and systems that learn how the world behaves.',
+      meta: { Focus: 'Embodied intelligence', Direction: 'World models' }
+    },
+    {
+      id: 'neuro-ai', label: 'Neuro-AI', kind: 'domain', group: 'research', tx: 270, ty: 430, radius: 31,
+      description: 'Cross-modal learning between fMRI brain activations, attention, and speech representations.',
+      meta: { Signals: '3D fMRI', Models: 'CNNs · Transformers' }
+    },
+    {
+      id: 'software', label: 'Software', kind: 'domain', group: 'build', tx: 515, ty: 505, radius: 31,
+      description: 'Interactive scientific tools, local AI applications, systems coursework, games, and web software.',
+      meta: { Repositories: '23 original public repos', Range: 'Systems to interfaces' }
+    },
+    {
+      id: 'smen', label: 'SMEN', kind: 'project', group: 'research', tx: 190, ty: 95, radius: 27,
+      description: 'A spectra-and-molecule encoder network for ranking and generating molecular structures from infrared spectra.',
+      meta: { Result: '81% Top-1 · 99% Top-10', Status: 'Peer reviewed' }, link: 'https://doi.org/10.1039/D4DD00135D'
+    },
+    {
+      id: 'molgpt', label: 'MolGPT 2.0', kind: 'project', group: 'research', tx: 75, ty: 180, radius: 30,
+      description: 'Multi-objective molecular generation using transformer encoder-decoder models and direct preference optimization.',
+      meta: { Result: '>95% validity & novelty', Role: 'Initial codebase author' }, link: 'https://github.com/devalab/MolGPT2.0'
+    },
+    {
+      id: 'bias-study', label: 'Bias study', kind: 'project', group: 'research', tx: 85, ty: 330, radius: 29,
+      description: 'Research exposing latent biases in popular datasets and models for binding-affinity prediction.',
+      meta: { Models: 'DeepDTA · GraphDTA · more', Status: 'Peer reviewed' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
+    },
+    {
+      id: 'beds', label: 'BEDS', kind: 'project', group: 'research', tx: 150, ty: 485, radius: 26,
+      description: 'Brain Encoding and Decoding of Speech: a private research implementation with a public project summary.',
+      meta: { Input: 'fMRI activations', Output: 'Speech representations' }, link: 'https://github.com/kganeshchandan/BEDS'
+    },
+    {
+      id: 'jepa', label: 'JEPA GOAT', kind: 'project', group: 'build', tx: 800, ty: 535, radius: 29,
+      description: 'A lightweight environment for collecting actions, frames, and object dynamics for future JEPA experiments.',
+      meta: { Area: 'World models', Stack: 'Python · Pygame' }, link: 'https://github.com/kganeshchandan/jepa-goat'
+    },
+    {
+      id: 'manga', label: 'Manga AI', kind: 'project', group: 'build', tx: 610, ty: 575, radius: 28,
+      description: 'A local-first manga colorizer combining a browser extension, FastAPI service, and local GAN inference.',
+      meta: { Privacy: 'Local-first', Stack: 'JavaScript · Python' }, link: 'https://github.com/kganeshchandan/manga-colorizer'
+    },
+    {
+      id: 'molvis', label: 'MolVis', kind: 'project', group: 'build', tx: 455, ty: 590, radius: 27,
+      description: 'An immersive Apple Vision Pro application for exploring and manipulating molecular structures.',
+      meta: { Platform: 'visionOS', Stack: 'RealityKit · SwiftUI' }, link: 'https://github.com/kganeshchandan/MolVis'
+    },
+    {
+      id: 'paper-spectra', label: 'Digital Discovery', kind: 'paper', group: 'publication', tx: 250, ty: 35, radius: 25,
+      description: 'Spectra to structure: contrastive learning framework for library ranking and molecular generation.',
+      meta: { Published: '2024', Journal: 'Digital Discovery' }, link: 'https://doi.org/10.1039/D4DD00135D'
+    },
+    {
+      id: 'paper-generative', label: 'GenAI review', kind: 'paper', group: 'publication', tx: 65, ty: 70, radius: 25,
+      description: 'A peer-reviewed review of generative artificial intelligence for small-molecule drug design.',
+      meta: { Published: '2024', Journal: 'Current Opinion in Biotechnology' }, link: 'https://doi.org/10.1016/j.copbio.2024.103175'
+    },
+    {
+      id: 'paper-bias', label: 'ACS Omega', kind: 'paper', group: 'publication', tx: 45, ty: 420, radius: 25,
+      description: 'Peer-reviewed study of latent biases in binding-affinity models using popular datasets.',
+      meta: { Published: '2023', Journal: 'ACS Omega' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
+    }
+  ];
+
+  const links = [
+    ['ganesh', 'iiith'], ['ganesh', 'samsung'], ['ganesh', 'virtual-labs'],
+    ['ganesh', 'molecular-ai'], ['ganesh', 'multimodal'], ['ganesh', 'neuro-ai'], ['ganesh', 'software'],
+    ['samsung', 'biosensing'], ['samsung', 'robotics'], ['biosensing', 'multimodal'],
+    ['robotics', 'jepa'], ['robotics', 'software'],
+    ['iiith', 'molecular-ai'], ['iiith', 'multimodal'], ['iiith', 'neuro-ai'],
+    ['molecular-ai', 'molgpt'], ['molecular-ai', 'bias-study'], ['molecular-ai', 'smen'],
+    ['multimodal', 'smen'], ['multimodal', 'beds'], ['neuro-ai', 'beds'],
+    ['software', 'manga'], ['software', 'molvis'], ['software', 'jepa'], ['software', 'virtual-labs'],
+    ['smen', 'paper-spectra'], ['molgpt', 'paper-generative'], ['bias-study', 'paper-bias']
+  ].map(([source, target]) => ({ source, target }));
+
+  const nodeMap = new Map(nodes.map((node) => [node.id, node]));
+  const edgeLayer = graph.querySelector('[data-edges]');
+  const nodeLayer = graph.querySelector('[data-nodes]');
+  const panel = document.querySelector('[data-node-panel]');
+  const panelType = panel.querySelector('[data-panel-type]');
+  const panelTitle = panel.querySelector('[data-panel-title]');
+  const panelDescription = panel.querySelector('[data-panel-description]');
+  const panelMeta = panel.querySelector('[data-panel-meta]');
+  const panelLink = panel.querySelector('[data-panel-link]');
+  let selectedId = null;
+  let activeFilter = 'all';
+  let searchTerm = '';
+  let dragging = null;
+  let pointerOffset = { x: 0, y: 0 };
+  let running = false;
+  let animationFrame;
+  let settleFrames = 0;
+
+  const makeSvg = (name, attributes = {}) => {
+    const element = document.createElementNS(SVG_NS, name);
+    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+    return element;
+  };
+
+  nodes.forEach((node, index) => {
+    const angle = (index / nodes.length) * Math.PI * 2;
+    node.x = width / 2 + Math.cos(angle) * 8;
+    node.y = height / 2 + Math.sin(angle) * 8;
+    node.vx = 0;
+    node.vy = 0;
+    node.spawned = false;
+
+    const group = makeSvg('g', {
+      class: 'graph-node',
+      'data-id': node.id,
+      'data-kind': node.kind,
+      role: 'button',
+      tabindex: '0',
+      'aria-label': `${node.label}: ${node.description}`
+    });
+    const visual = makeSvg('g', { class: 'node-visual' });
+    const circle = makeSvg('circle', { class: 'node-ring', r: node.radius });
+    visual.append(circle);
+
+    const words = node.label.split(' ');
+    const text = makeSvg('text', { class: `node-label${node.label.length > 12 ? ' is-small' : ''}` });
+    if (words.length > 1) {
+      const midpoint = Math.ceil(words.length / 2);
+      [words.slice(0, midpoint), words.slice(midpoint)].forEach((line, lineIndex) => {
+        if (!line.length) return;
+        const tspan = makeSvg('tspan', { x: '0', dy: lineIndex === 0 ? '-1' : '12' });
+        tspan.textContent = line.join(' ');
+        text.append(tspan);
+      });
+    } else {
+      text.setAttribute('dy', '3');
+      text.textContent = node.label;
+    }
+    visual.append(text);
+    group.append(visual);
+    nodeLayer.append(group);
+    node.element = group;
+  });
+
+  links.forEach((link) => {
+    const line = makeSvg('line', { class: 'graph-edge', pathLength: '1' });
+    edgeLayer.append(line);
+    link.element = line;
+  });
+
+  const render = () => {
+    nodes.forEach((node) => {
+      node.element.setAttribute('transform', `translate(${node.x.toFixed(2)} ${node.y.toFixed(2)})`);
+    });
+    links.forEach((link) => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      link.element.setAttribute('x1', source.x);
+      link.element.setAttribute('y1', source.y);
+      link.element.setAttribute('x2', target.x);
+      link.element.setAttribute('y2', target.y);
+    });
+  };
+
+  const tick = () => {
+    const visibleNodes = nodes.filter((node) => node.spawned);
+    let energy = 0;
+
+    for (let i = 0; i < visibleNodes.length; i += 1) {
+      const a = visibleNodes[i];
+      for (let j = i + 1; j < visibleNodes.length; j += 1) {
+        const b = visibleNodes[j];
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        const distanceSquared = Math.max(dx * dx + dy * dy, 80);
+        const distance = Math.sqrt(distanceSquared);
+        const minimum = a.radius + b.radius + 18;
+        const force = distance < minimum ? (minimum - distance) * .018 : 150 / distanceSquared;
+        dx /= distance;
+        dy /= distance;
+        if (a !== dragging) { a.vx -= dx * force; a.vy -= dy * force; }
+        if (b !== dragging) { b.vx += dx * force; b.vy += dy * force; }
+      }
+    }
+
+    links.forEach((link) => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      if (!source.spawned || !target.spawned) return;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const distance = Math.max(Math.hypot(dx, dy), 1);
+      const desired = source.id === 'ganesh' ? 155 : 120;
+      const force = (distance - desired) * .00075;
+      if (source !== dragging) { source.vx += dx * force; source.vy += dy * force; }
+      if (target !== dragging) { target.vx -= dx * force; target.vy -= dy * force; }
+    });
+
+    visibleNodes.forEach((node) => {
+      if (node === dragging) return;
+      node.vx += (node.tx - node.x) * .0018;
+      node.vy += (node.ty - node.y) * .0018;
+      node.vx *= .88;
+      node.vy *= .88;
+      node.x = Math.max(node.radius + 10, Math.min(width - node.radius - 10, node.x + node.vx));
+      node.y = Math.max(node.radius + 10, Math.min(height - node.radius - 10, node.y + node.vy));
+      energy += Math.abs(node.vx) + Math.abs(node.vy);
+    });
+
+    render();
+    settleFrames = energy < .08 && !dragging ? settleFrames + 1 : 0;
+    if (settleFrames < 35) {
+      animationFrame = requestAnimationFrame(tick);
+    } else {
+      running = false;
+    }
+  };
+
+  const reheat = () => {
+    settleFrames = 0;
+    if (!running) {
+      running = true;
+      animationFrame = requestAnimationFrame(tick);
+    }
+  };
+
+  const relatedIds = (id) => new Set([
+    id,
+    ...links.filter((link) => link.source === id).map((link) => link.target),
+    ...links.filter((link) => link.target === id).map((link) => link.source)
+  ]);
+
+  const applyVisibility = () => {
+    const publicationContext = new Set(['ganesh', 'iiith', 'molecular-ai', 'multimodal', 'smen', 'molgpt', 'bias-study']);
+    const matching = new Set(nodes.filter((node) => {
+      const filterMatch = activeFilter === 'all'
+        || node.group === activeFilter
+        || node.id === 'ganesh'
+        || (activeFilter === 'publication' && publicationContext.has(node.id));
+      const haystack = `${node.label} ${node.description} ${Object.values(node.meta).join(' ')}`.toLowerCase();
+      const searchMatch = !searchTerm || haystack.includes(searchTerm);
+      return filterMatch && searchMatch;
+    }).map((node) => node.id));
+
+    const selectedRelated = selectedId ? relatedIds(selectedId) : null;
+    nodes.forEach((node) => {
+      const mutedByFilter = !matching.has(node.id);
+      const mutedBySelection = selectedRelated && !selectedRelated.has(node.id);
+      node.element.classList.toggle('is-muted', Boolean(mutedByFilter || mutedBySelection));
+      node.element.classList.toggle('is-match', Boolean(searchTerm && matching.has(node.id)));
+      node.element.classList.toggle('is-selected', node.id === selectedId);
+    });
+    links.forEach((link) => {
+      const filterMuted = !matching.has(link.source) || !matching.has(link.target);
+      const related = selectedId && (link.source === selectedId || link.target === selectedId);
+      link.element.classList.toggle('is-muted', Boolean(filterMuted || (selectedId && !related)));
+      link.element.classList.toggle('is-related', Boolean(related && !filterMuted));
+    });
+  };
+
+  const inspectNode = (node) => {
+    selectedId = node.id;
+    panelType.textContent = node.kind === 'paper' ? 'Publication' : node.kind === 'place' ? 'Institution' : node.kind === 'domain' ? 'Domain' : node.kind === 'root' ? 'Profile' : 'Project';
+    panelTitle.textContent = node.label;
+    panelDescription.textContent = node.description;
+    panelMeta.replaceChildren(...Object.entries(node.meta).map(([term, value]) => {
+      const row = document.createElement('div');
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      dt.textContent = term;
+      dd.textContent = value;
+      row.append(dt, dd);
+      return row;
+    }));
+    if (node.link) {
+      panelLink.hidden = false;
+      panelLink.href = node.link;
+      panelLink.textContent = node.link.startsWith('#') ? 'Explore section ↘' : 'Open source ↗';
+      if (!node.link.startsWith('#')) {
+        panelLink.target = '_blank';
+        panelLink.rel = 'noreferrer';
+      } else {
+        panelLink.removeAttribute('target');
+        panelLink.removeAttribute('rel');
+      }
+    } else {
+      panelLink.hidden = true;
+    }
+    panel.classList.add('is-open');
+    applyVisibility();
+  };
+
+  const closePanel = () => {
+    selectedId = null;
+    panel.classList.remove('is-open');
+    applyVisibility();
+  };
+
+  const clientToGraph = (event) => {
+    const point = graph.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(graph.getScreenCTM().inverse());
+  };
+
+  nodes.forEach((node) => {
+    node.element.addEventListener('click', () => {
+      if (!dragging && !node.moved) inspectNode(node);
+    });
+    node.element.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        inspectNode(node);
+      }
+    });
+    node.element.addEventListener('pointerdown', (event) => {
+      const point = clientToGraph(event);
+      dragging = node;
+      dragging.moved = false;
+      pointerOffset = { x: node.x - point.x, y: node.y - point.y };
+      node.element.setPointerCapture(event.pointerId);
+      graph.classList.add('is-dragging');
+      reheat();
+    });
+    node.element.addEventListener('pointermove', (event) => {
+      if (dragging !== node) return;
+      const point = clientToGraph(event);
+      if (Math.hypot(point.x + pointerOffset.x - node.x, point.y + pointerOffset.y - node.y) > 2) node.moved = true;
+      node.x = Math.max(node.radius, Math.min(width - node.radius, point.x + pointerOffset.x));
+      node.y = Math.max(node.radius, Math.min(height - node.radius, point.y + pointerOffset.y));
+      node.vx = 0;
+      node.vy = 0;
+      render();
+    });
+    node.element.addEventListener('pointerup', () => {
+      const wasMoved = node.moved;
+      dragging = null;
+      graph.classList.remove('is-dragging');
+      if (wasMoved) {
+        node.tx = node.x;
+        node.ty = node.y;
+      }
+      setTimeout(() => { node.moved = false; }, 0);
+      reheat();
+    });
+  });
+
+  document.querySelector('[data-panel-close]')?.addEventListener('click', closePanel);
+
+  document.querySelectorAll('[data-filter]').forEach((button) => {
+    button.addEventListener('click', () => {
+      activeFilter = button.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach((item) => item.classList.toggle('is-active', item === button));
+      closePanel();
+      applyVisibility();
+    });
+  });
+
+  document.querySelector('[data-atlas-search]')?.addEventListener('input', (event) => {
+    searchTerm = event.target.value.trim().toLowerCase();
+    selectedId = null;
+    panel.classList.remove('is-open');
+    applyVisibility();
+  });
+
+  const spawn = () => {
+    const order = ['ganesh', 'iiith', 'samsung', 'virtual-labs', 'molecular-ai', 'multimodal', 'biosensing', 'robotics', 'neuro-ai', 'software', 'smen', 'molgpt', 'bias-study', 'beds', 'jepa', 'manga', 'molvis', 'paper-spectra', 'paper-generative', 'paper-bias'];
+    order.forEach((id, index) => {
+      window.setTimeout(() => {
+        const node = nodeMap.get(id);
+        node.spawned = true;
+        node.vx = (node.tx - node.x) * .018;
+        node.vy = (node.ty - node.y) * .018;
+        node.element.classList.add('is-visible');
+        links.forEach((link) => {
+          if (nodeMap.get(link.source).spawned && nodeMap.get(link.target).spawned) link.element.classList.add('is-visible');
+        });
+        reheat();
+      }, reducedMotion ? 0 : index * 105);
+    });
+  };
+
+  render();
+  const atlasObserver = new IntersectionObserver((entries, observer) => {
+    if (entries.some((entry) => entry.isIntersecting)) {
+      spawn();
+      observer.disconnect();
+    }
+  }, { threshold: .18 });
+  atlasObserver.observe(graph);
+
+  window.addEventListener('pagehide', () => cancelAnimationFrame(animationFrame));
+}

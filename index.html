@@ -3,13 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Ganesh Chandan is a senior software engineer and AI researcher building intelligent systems, ML tools, and experimental software.">
-  <meta name="theme-color" content="#f2efe8">
-  <meta property="og:title" content="Ganesh Chandan — Software Engineer & AI Researcher">
-  <meta property="og:description" content="Selected work across AI, machine learning systems, research, and software engineering.">
+  <meta name="description" content="Ganesh Chandan is a senior software engineer and AI researcher working across robotics, scientific AI, biosensing, and intelligent systems.">
+  <meta name="theme-color" content="#f4f1ea">
+  <link rel="canonical" href="https://kganeshchandan.github.io/">
+  <meta property="og:title" content="Ganesh Chandan — Intelligence across scales">
+  <meta property="og:description" content="An interactive atlas of work across molecular AI, biosensing, scientific software, and robotics.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kganeshchandan.github.io/">
-  <title>Ganesh Chandan — Software Engineer & AI Researcher</title>
+  <meta name="twitter:card" content="summary">
+  <title>Ganesh Chandan — Intelligence across scales</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Sans:wdth,wght@75..100,400..700&family=Newsreader:opsz,wght@6..72,500&display=swap" rel="stylesheet">
@@ -22,190 +24,222 @@
   <header class="site-header" data-header>
     <a class="wordmark" href="#top" aria-label="Ganesh Chandan, home">
       <span class="wordmark-mark" aria-hidden="true">GC</span>
-      <span class="wordmark-name">Ganesh Chandan</span>
+      <span>Ganesh Chandan</span>
     </a>
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-toggle>
-      <span>Menu</span>
-      <span class="menu-icon" aria-hidden="true"></span>
+      <span>Menu</span><span class="menu-icon" aria-hidden="true"></span>
     </button>
     <nav class="site-nav" id="site-nav" aria-label="Primary" data-nav>
-      <a href="#work">Work</a>
-      <a href="#experience">Experience</a>
-      <a href="#research">Research</a>
+      <a href="#atlas">Atlas</a>
+      <a href="#work">Selected work</a>
+      <a href="#journey">Journey</a>
+      <a href="#archive">Archive</a>
       <a href="#contact">Contact</a>
     </nav>
   </header>
 
   <main id="main">
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <div class="hero-kicker reveal">
-        <span class="status-dot" aria-hidden="true"></span>
-        <span>Senior Software Engineer · Bangalore, India</span>
-      </div>
-      <div class="hero-grid">
-        <div class="hero-copy">
-          <h1 id="hero-title" class="reveal">I build software<br>that <em>learns</em>,<br>reasons &amp; acts.</h1>
-          <p class="hero-summary reveal">I’m Ganesh—an engineer at Samsung Research currently focused on robotics and AI. My earlier work spans healthcare AI, edge systems, multimodal learning, molecular design, and neuro-AI.</p>
-          <div class="hero-actions reveal">
-            <a class="button button-primary" href="#work">Explore selected work <span aria-hidden="true">↘</span></a>
-            <a class="text-link" href="resume.pdf" target="_blank">View résumé <span aria-hidden="true">↗</span></a>
-          </div>
+      <div class="hero-copy">
+        <p class="kicker"><span class="live-dot" aria-hidden="true"></span>Senior Software Engineer · Bangalore, India</p>
+        <h1 id="hero-title">Building<br>intelligence<br><em>across scales.</em></h1>
+        <p class="hero-summary">I’m Ganesh Chandan—an engineer and AI researcher connecting molecules, human signals, and intelligent machines.</p>
+        <div class="hero-actions">
+          <a class="button button-dark" href="#atlas">Explore the atlas <span aria-hidden="true">↓</span></a>
+          <a class="text-link" href="resume.pdf" target="_blank" rel="noreferrer">View résumé <span aria-hidden="true">↗</span></a>
         </div>
-        <aside class="signal-board reveal" aria-label="Profile summary">
-          <p class="eyebrow">Current signal</p>
-          <dl>
-            <div>
-              <dt>Building</dt>
-              <dd>Robotics, embodied intelligence, and world models</dd>
-            </div>
-            <div>
-              <dt>Research</dt>
-              <dd>Multimodal learning, molecular generation, and scientific AI</dd>
-            </div>
-            <div>
-              <dt>Evidence</dt>
-              <dd>3 peer-reviewed papers · 2 biosensing patents filed</dd>
-            </div>
-          </dl>
-          <div class="signal-orbit" aria-hidden="true">
-            <span></span><span></span><span></span>
-          </div>
-        </aside>
       </div>
-      <div class="hero-index" aria-hidden="true">
-        <span>01 — Portfolio / 2026</span>
-        <span>Scroll to inspect</span>
+      <div class="hero-orbit" aria-hidden="true">
+        <span class="orbit orbit-one"></span>
+        <span class="orbit orbit-two"></span>
+        <span class="orbit-core">GC</span>
+        <span class="orbit-label label-one">Molecules</span>
+        <span class="orbit-label label-two">Signals</span>
+        <span class="orbit-label label-three">Machines</span>
+      </div>
+      <div class="hero-foot" aria-hidden="true">
+        <span>Portfolio / <span data-year></span></span>
+        <span>Scroll to map the work</span>
       </div>
     </section>
 
-    <section class="section work-section" id="work" aria-labelledby="work-title">
-      <div class="section-intro reveal">
-        <p class="eyebrow">Selected work</p>
-        <h2 id="work-title">Experiments with<br><em>real edges.</em></h2>
-        <p>Research systems spanning molecular generation, multimodal retrieval, spatial computing, and brain decoding.</p>
-      </div>
-
-      <div class="project-list">
-        <article class="project reveal">
-          <a class="project-link" href="https://github.com/devalab/MolGPT2.0" target="_blank" rel="noreferrer" aria-label="View MolGPT 2.0 on GitHub">
-            <span class="project-number">01</span>
-            <span class="project-main">
-              <span class="project-title">MolGPT 2.0</span>
-              <span class="project-description">A multi-objective transformer encoder–decoder for conditional molecular generation with Direct Preference Optimization. The public repository contains training code, checkpoints, generated molecules, and model-specific evaluation metrics.</span>
-              <span class="tag-row"><span>Transformers</span><span>DPO</span><span>SMILES</span><span>Drug design</span></span>
-            </span>
-            <span class="project-arrow" aria-hidden="true">↗</span>
-          </a>
-        </article>
-
-        <article class="project reveal">
-          <a class="project-link" href="https://doi.org/10.1039/D4DD00135D" target="_blank" rel="noreferrer" aria-label="Read the SMEN paper">
-            <span class="project-number">02</span>
-            <span class="project-main">
-              <span class="project-title">SMEN</span>
-              <span class="project-description">A multimodal spectra-and-molecule encoder combining equivariant graph networks, vision transformers, and generative transformers to retrieve and generate molecular structures from IR spectra.</span>
-              <span class="tag-row"><span>EGNN</span><span>Vision Transformers</span><span>Contrastive learning</span><span>Top-10: 99%</span></span>
-            </span>
-            <span class="project-arrow" aria-hidden="true">↗</span>
-          </a>
-        </article>
-
-        <article class="project reveal">
-          <a class="project-link" href="https://github.com/kganeshchandan/MolVis" target="_blank" rel="noreferrer" aria-label="View MolVis on GitHub">
-            <span class="project-number">03</span>
-            <span class="project-main">
-              <span class="project-title">MolVis</span>
-              <span class="project-description">An immersive visionOS application for visualizing and manipulating protein molecules on Apple Vision Pro, designed for intuitive spatial exploration of molecular structures.</span>
-              <span class="tag-row"><span>visionOS</span><span>SwiftUI</span><span>RealityKit</span><span>Spatial computing</span></span>
-            </span>
-            <span class="project-arrow" aria-hidden="true">↗</span>
-          </a>
-        </article>
-
-        <article class="project reveal">
-          <a class="project-link" href="https://github.com/kganeshchandan/BEDS" target="_blank" rel="noreferrer" aria-label="View BEDS on GitHub">
-            <span class="project-number">04</span>
-            <span class="project-main">
-              <span class="project-title">BEDS</span>
-              <span class="project-description">A deep-learning pipeline for decoding speech from 3D fMRI activations, combining CNN-based neural encoding with transformer speech representations.</span>
-              <span class="tag-row"><span>fMRI</span><span>CNNs</span><span>Transformers</span><span>Neuro-AI</span></span>
-            </span>
-            <span class="project-arrow" aria-hidden="true">↗</span>
-          </a>
-        </article>
-      </div>
-
-      <a class="button button-dark reveal" href="https://github.com/kganeshchandan?tab=repositories" target="_blank" rel="noreferrer">View all repositories <span aria-hidden="true">↗</span></a>
-    </section>
-
-    <section class="section experience-section" id="experience" aria-labelledby="experience-title">
-      <div class="section-heading reveal">
-        <p class="eyebrow">Experience</p>
-        <h2 id="experience-title">Engineering,<br>grounded in <em>research.</em></h2>
-      </div>
-      <div class="timeline">
-        <article class="timeline-item reveal">
-          <div class="timeline-meta"><span>Jul 2024 — Present</span><span>Industry</span></div>
-          <div class="timeline-copy">
-            <h3>Senior Software Engineer</h3>
-            <p class="timeline-place">Advanced Research &amp; Standards · Samsung Research India</p>
-            <p>Currently focused on robotics and AI. Earlier work developed PPG-based biosensing and audio deep-learning systems for human and machine health, including optimization for wearable edge devices. Filed two biosensing patents; received the Samsung Excellence Award 2024 and Spot Award 2025.</p>
-          </div>
-        </article>
-        <article class="timeline-item reveal">
-          <div class="timeline-meta"><span>Mar 2021 — Mar 2024</span><span>Research</span></div>
-          <div class="timeline-copy">
-            <h3>Undergraduate Researcher</h3>
-            <p class="timeline-place">Center for Computational Sciences · IIIT Hyderabad</p>
-            <p>Led and contributed to data-driven drug-discovery research using GNNs, GPT models, diffusion models, molecular spectra and graphs, 2D imagery, and fMRI. Mentored junior researchers and co-authored three peer-reviewed papers.</p>
-          </div>
-        </article>
-        <article class="timeline-item reveal">
-          <div class="timeline-meta"><span>Aug 2022 — Jan 2023</span><span>Engineering</span></div>
-          <div class="timeline-copy">
-            <h3>Software Developer</h3>
-            <p class="timeline-place">Virtual Labs · Ministry of Education initiative</p>
-            <p>Built interactive Three.js simulations of solid-state chemistry experiments, expanding access to realistic remote laboratory experiences for students across India.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section research-section" id="research" aria-labelledby="research-title">
-      <div class="research-grid">
-        <div class="research-statement reveal">
-          <p class="eyebrow">Research</p>
-          <h2 id="research-title">Curiosity needs<br><em>an instrument.</em></h2>
-          <p>My research training shapes how I engineer: form a precise question, build a system that can answer it, and distrust results that have not survived a strong baseline.</p>
-        </div>
-        <article class="publication reveal">
-          <div class="publication-mark" aria-hidden="true">P</div>
-          <p class="eyebrow">Selected publications · 3</p>
-          <ol class="publication-list">
-            <li><a href="https://doi.org/10.1039/D4DD00135D" target="_blank" rel="noreferrer"><strong>Spectra to structure</strong><span>Digital Discovery · 2024</span></a></li>
-            <li><a href="https://doi.org/10.1016/j.copbio.2024.103175" target="_blank" rel="noreferrer"><strong>Generative AI for small molecule drug design</strong><span>Current Opinion in Biotechnology · 2024</span></a></li>
-            <li><a href="https://doi.org/10.1021/acsomega.2c06781" target="_blank" rel="noreferrer"><strong>Latent biases in binding-affinity prediction</strong><span>ACS Omega · 2023</span></a></li>
-          </ol>
-        </article>
-      </div>
-      <div class="education-strip reveal">
-        <p class="eyebrow">Education</p>
+    <section class="atlas-section" id="atlas" aria-labelledby="atlas-title">
+      <header class="section-heading atlas-heading">
         <div>
-          <h3>B.Tech, Computer Science + M.S. by Research, Computational Natural Sciences</h3>
-          <p>International Institute of Information Technology, Hyderabad · 2019–2024 · M.S. CGPA 9.0 · Academic Research Award 2023</p>
+          <p class="eyebrow">01 / Intelligence atlas</p>
+          <h2 id="atlas-title">One body of work.<br><em>Many connected questions.</em></h2>
+        </div>
+        <p>Explore the relationships between research, products, publications, and professional work. Drag nodes, select a connection, or filter the graph.</p>
+      </header>
+
+      <div class="atlas-shell">
+        <div class="atlas-toolbar">
+          <div class="atlas-filters" aria-label="Filter atlas">
+            <button class="filter-button is-active" type="button" data-filter="all">All</button>
+            <button class="filter-button" type="button" data-filter="research">Research</button>
+            <button class="filter-button" type="button" data-filter="professional">Professional</button>
+            <button class="filter-button" type="button" data-filter="build">Builds</button>
+            <button class="filter-button" type="button" data-filter="publication">Publications</button>
+          </div>
+          <label class="atlas-search">
+            <span class="sr-only">Search atlas</span>
+            <input type="search" placeholder="Find a node…" data-atlas-search autocomplete="off">
+            <span aria-hidden="true">⌕</span>
+          </label>
+        </div>
+
+        <div class="atlas-stage" data-atlas-stage>
+          <svg class="knowledge-graph" data-graph viewBox="0 0 900 640" role="group" aria-label="Interactive knowledge graph of Ganesh Chandan's work">
+            <g data-edges></g>
+            <g data-nodes></g>
+          </svg>
+          <p class="graph-instruction" data-graph-instruction>Drag to rearrange · Select to inspect</p>
+          <aside class="node-panel" data-node-panel aria-live="polite">
+            <button class="panel-close" type="button" data-panel-close aria-label="Close details">×</button>
+            <p class="eyebrow" data-panel-type>Atlas guide</p>
+            <h3 data-panel-title>Select a node</h3>
+            <p data-panel-description>The graph links the domains, projects, papers, and institutions that shape my work.</p>
+            <dl class="panel-meta" data-panel-meta></dl>
+            <a class="panel-link" data-panel-link href="#work" hidden>Explore <span aria-hidden="true">↗</span></a>
+          </aside>
+        </div>
+
+        <div class="atlas-legend" aria-label="Graph legend">
+          <span><i class="legend-domain"></i>Domain</span>
+          <span><i class="legend-project"></i>Project</span>
+          <span><i class="legend-paper"></i>Publication</span>
+          <span><i class="legend-place"></i>Institution</span>
         </div>
       </div>
+    </section>
+
+    <section class="proof-strip" aria-label="Selected evidence">
+      <div><strong>03</strong><span>Peer-reviewed papers</span></div>
+      <div><strong>02</strong><span>Biosensing patents filed</span></div>
+      <div><strong>37</strong><span>Audited public repository URLs</span></div>
+      <div><strong>03</strong><span>Research &amp; engineering awards</span></div>
+    </section>
+
+    <section class="work-section" id="work" aria-labelledby="work-title">
+      <header class="section-heading work-heading">
+        <div>
+          <p class="eyebrow">02 / Selected work</p>
+          <h2 id="work-title">Questions worth<br><em>building around.</em></h2>
+        </div>
+        <p>A selection of research and software where the problem, system, and evidence form one coherent story.</p>
+      </header>
+
+      <div class="case-list">
+        <article class="case-study">
+          <a href="https://doi.org/10.1039/D4DD00135D" target="_blank" rel="noreferrer" aria-label="Read the Spectra to Structure paper">
+            <span class="case-number">01</span>
+            <div class="case-copy">
+              <p class="case-domain">Multimodal AI · Published research</p>
+              <h3>Spectra to Structure</h3>
+              <p>A contrastive framework combining molecular graphs, infrared spectra, and generative models to retrieve and generate molecular structures.</p>
+              <ul><li>81% Top-1</li><li>99% Top-10</li><li>Digital Discovery, 2024</li></ul>
+            </div>
+            <span class="case-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <article class="case-study">
+          <a href="https://github.com/devalab/MolGPT2.0" target="_blank" rel="noreferrer" aria-label="View MolGPT 2.0 on GitHub">
+            <span class="case-number">02</span>
+            <div class="case-copy">
+              <p class="case-domain">Molecular generation · Research system</p>
+              <h3>MolGPT 2.0</h3>
+              <p>Multi-objective molecular generation using transformer encoder-decoder models and direct preference optimization.</p>
+              <ul><li>&gt;95% validity</li><li>&gt;95% novelty</li><li>Initial codebase author</li></ul>
+            </div>
+            <span class="case-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <article class="case-study">
+          <a href="https://doi.org/10.1021/acsomega.2c06781" target="_blank" rel="noreferrer" aria-label="Read the binding-affinity bias paper">
+            <span class="case-number">03</span>
+            <div class="case-copy">
+              <p class="case-domain">Drug discovery · Published research</p>
+              <h3>Bias before benchmark</h3>
+              <p>An investigation into latent dataset biases in widely used machine-learning models for drug–target binding-affinity prediction.</p>
+              <ul><li>Four model families</li><li>Three datasets</li><li>ACS Omega, 2023</li></ul>
+            </div>
+            <span class="case-arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+
+        <article class="case-study case-private">
+          <div class="case-static">
+            <span class="case-number">04</span>
+            <div class="case-copy">
+              <p class="case-domain">Edge AI · Professional work</p>
+              <h3>Intelligence at the edge</h3>
+              <p>Wearable biosensing and audio intelligence optimized for constrained edge devices, spanning health signals and predictive maintenance.</p>
+              <ul><li>2 patents filed</li><li>2 internal papers</li><li>Excellence Award</li></ul>
+            </div>
+            <span class="case-lock">Résumé-approved summary</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="journey-section" id="journey" aria-labelledby="journey-title">
+      <header class="section-heading journey-heading">
+        <div>
+          <p class="eyebrow">03 / Journey</p>
+          <h2 id="journey-title">From molecules<br><em>to machines.</em></h2>
+        </div>
+        <p>The common thread is learning from complex signals—chemical, biological, or physical—and turning them into systems that can act.</p>
+      </header>
+
+      <div class="timeline">
+        <article>
+          <div class="timeline-year">2019—21</div>
+          <div><p class="eyebrow">Foundations</p><h3>Software systems</h3><p>Web applications, games, operating systems, networks, databases, and an entry into machine learning.</p></div>
+        </article>
+        <article>
+          <div class="timeline-year">2021—24</div>
+          <div><p class="eyebrow">IIIT Hyderabad</p><h3>Scientific AI</h3><p>Drug discovery, molecular generation, multimodal spectra learning, fMRI, mentoring, and three peer-reviewed publications.</p></div>
+        </article>
+        <article>
+          <div class="timeline-year">2022—23</div>
+          <div><p class="eyebrow">Virtual Labs</p><h3>Interactive science</h3><p>Three.js simulations made solid-state chemistry experiments explorable through the browser.</p></div>
+        </article>
+        <article>
+          <div class="timeline-year">2024—Now</div>
+          <div><p class="eyebrow">Samsung Research</p><h3>Signals, edge AI, robotics</h3><p>From wearable biosensing and edge intelligence toward robotics, embodied intelligence, and world models.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="archive-section" id="archive" aria-labelledby="archive-title">
+      <header class="section-heading archive-heading">
+        <div>
+          <p class="eyebrow">04 / Repository archive</p>
+          <h2 id="archive-title">The wider<br><em>workbench.</em></h2>
+        </div>
+        <p>Not every repository is a flagship. This archive groups public work by purpose while preserving coursework, experiments, and infrastructure.</p>
+      </header>
+
+      <div class="archive-grid">
+        <article><span>Research</span><strong>10+</strong><p>MolGPT 2.0, Spectra2Structure, CLIP_FULL, binding-affinity studies, BEDS</p></article>
+        <article><span>Software &amp; experiments</span><strong>08+</strong><p>Manga Colorizer, JEPA GOAT, JobsHub, SpaceOdyssey, BlockBreakerVII</p></article>
+        <article><span>Teaching &amp; coursework</span><strong>08+</strong><p>Virtual Labs, ML exercises, systems, networks, databases, D4 projects</p></article>
+        <article><span>Archive &amp; infrastructure</span><strong>06+</strong><p>Portfolio history, profile tooling, GitHub stats, dotfiles, datasets, forks</p></article>
+      </div>
+      <a class="button button-outline" href="https://github.com/kganeshchandan?tab=repositories" target="_blank" rel="noreferrer">Browse all repositories <span aria-hidden="true">↗</span></a>
     </section>
 
     <section class="contact-section" id="contact" aria-labelledby="contact-title">
-      <p class="eyebrow reveal">Let’s build something difficult</p>
-      <h2 id="contact-title" class="reveal">Have a hard problem<br>worth <em>thinking about?</em></h2>
-      <div class="contact-row reveal">
+      <p class="eyebrow">05 / Contact</p>
+      <h2 id="contact-title">Have a hard problem<br>worth <em>mapping out?</em></h2>
+      <div class="contact-row">
         <a class="button button-light" href="mailto:k.ganesh.chandan@gmail.com">Start a conversation <span aria-hidden="true">↗</span></a>
         <div class="social-links" aria-label="Social profiles">
-          <a href="https://github.com/kganeshchandan" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-          <a href="https://www.linkedin.com/in/kganeshchandan" target="_blank" rel="noreferrer">LinkedIn <span aria-hidden="true">↗</span></a>
-          <a href="https://orcid.org/0000-0002-4469-1857" target="_blank" rel="noreferrer">ORCID <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/kganeshchandan" target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href="https://www.linkedin.com/in/kganeshchandan" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+          <a href="https://orcid.org/0000-0002-4469-1857" target="_blank" rel="noreferrer">ORCID ↗</a>
         </div>
       </div>
     </section>
