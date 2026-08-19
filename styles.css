@@ -92,8 +92,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .graph-node[data-kind="place"] .node-ring { fill: var(--signal); stroke: var(--signal); }
 .graph-node[data-id="ganesh"] .node-ring { fill: var(--yellow); stroke: var(--yellow); stroke-width: 3; }
 .graph-node[data-id="ganesh"] .node-label { fill: var(--paper); }
-.node-label { fill: var(--ink); font: 500 10px var(--mono); text-anchor: middle; pointer-events: none; }
-.node-label.is-small { font-size: 8px; }
+.node-label { fill: var(--ink); font: 500 9px var(--mono); text-anchor: middle; pointer-events: none; }
+.node-label.is-small { font-size: 7.5px; }
 .graph-controls { position: absolute; z-index: 3; top: 13px; right: 14px; display: flex; border: 1px solid var(--line); background: rgba(40,40,40,.9); }
 .graph-controls button { min-width: 36px; min-height: 36px; padding: 0 10px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font: 12px var(--mono); }
 .graph-controls button:last-child { border-right: 0; font-size: 8px; text-transform: uppercase; }

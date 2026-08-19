@@ -282,7 +282,7 @@ if (graph) {
       'aria-label': `${node.label}: ${node.description}`
     });
     const visual = makeSvg('g', { class: 'node-visual' });
-    const displayRadius = mobileView ? node.radius * 1.6 : node.radius;
+    const displayRadius = node.radius * (mobileView ? 1.45 : .9);
     node.renderRadius = displayRadius;
     const circle = makeSvg('circle', { class: 'node-ring', r: displayRadius });
     node.circle = circle;
@@ -827,7 +827,7 @@ if (graph) {
       node.vx = 0;
       node.vy = 0;
       node.progress = node.spawned ? 1 : 0;
-      node.renderRadius = mobileView ? node.radius * 1.6 : node.radius;
+      node.renderRadius = node.radius * (mobileView ? 1.45 : .9);
       node.circle.setAttribute('r', node.renderRadius);
     });
     refreshLinkLengths();
