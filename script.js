@@ -208,7 +208,7 @@ if (graph) {
   const searchResults = document.querySelector('[data-search-results]');
   const mobileView = window.matchMedia('(max-width: 720px)').matches;
   const defaultView = mobileView
-    ? { x: 250, y: 0, width: 400, height: 640 }
+    ? { x: 100, y: 0, width: 650, height: 640 }
     : { x: 0, y: 0, width: 900, height: 640 };
   let currentView = { ...defaultView };
   let selectedId = null;
@@ -254,7 +254,8 @@ if (graph) {
       'aria-label': `${node.label}: ${node.description}`
     });
     const visual = makeSvg('g', { class: 'node-visual' });
-    const circle = makeSvg('circle', { class: 'node-ring', r: node.radius });
+    const displayRadius = mobileView ? node.radius * 1.6 : node.radius;
+    const circle = makeSvg('circle', { class: 'node-ring', r: displayRadius });
     visual.append(circle);
 
     const words = node.label.split(' ');

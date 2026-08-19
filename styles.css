@@ -38,7 +38,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .site-header-dark.is-scrolled { border-color: var(--line); }
 .wordmark { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 650; letter-spacing: -.025em; }
 .wordmark-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--ink); color: var(--paper); font-family: var(--mono); font-size: 10px; }
-.site-header-dark .wordmark-mark { background: var(--paper); color: var(--ink); }
+.site-header-dark .wordmark-mark { background: var(--yellow); color: var(--paper); }
 .site-nav { display: flex; gap: 28px; }
 .site-nav a { position: relative; font-family: var(--mono); font-size: 10px; letter-spacing: .04em; text-decoration: none; text-transform: uppercase; }
 .site-nav a::after { position: absolute; bottom: -7px; left: 0; width: 100%; height: 1px; background: currentColor; content: ""; transform: scaleX(0); transform-origin: right; transition: transform .25s var(--ease); }
@@ -47,9 +47,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 /* Graph-only home */
 .graph-page { overflow: hidden; background: var(--paper); color: var(--ink); }
-.graph-home { height: 100svh; padding: 94px max(22px, calc((100vw - 1500px) / 2)) 20px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
+.graph-home { height: 100svh; padding: 94px max(32px, calc((100vw - 1400px) / 2)) 20px; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; }
 .graph-title { display: flex; align-items: end; gap: 18px; }
-.graph-title .eyebrow { margin: 0 0 3px; color: var(--acid); }
+.graph-title .eyebrow { display: none; }
 .graph-title h1 { margin: 0; font-size: clamp(24px, 3vw, 45px); line-height: 1; letter-spacing: -.05em; }
 .graph-title > p { margin: 0 0 3px auto; color: var(--muted); font: 9px var(--mono); text-transform: uppercase; }
 .live-dot { width: 7px; height: 7px; margin-right: 7px; display: inline-block; border-radius: 50%; background: var(--acid); box-shadow: 0 0 0 5px rgba(184,187,38,.12); animation: pulse 2.4s ease-out infinite; }
@@ -74,10 +74,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .atlas-stage { position: relative; min-height: 0; overflow: hidden; background-color: var(--paper); background-image: radial-gradient(rgba(235,219,178,.11) .7px, transparent .7px); background-size: 22px 22px; }
 .knowledge-graph { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .knowledge-graph.is-dragging { cursor: grabbing; }
-.graph-edge { stroke: rgba(235,219,178,.3); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; transition: opacity .35s, stroke .25s; }
+.graph-edge { stroke: rgba(235,219,178,.55); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; transition: opacity .35s, stroke .25s, stroke-width .25s; }
 .graph-edge.is-visible { opacity: 1; animation: draw-edge .9s var(--ease) forwards; }
-.graph-edge.is-muted { opacity: .05; }
-.graph-edge.is-related { stroke: var(--acid); opacity: .8; }
+.graph-edge.is-muted { opacity: .1; }
+.graph-edge.is-related { stroke: var(--yellow); stroke-width: 2.25; opacity: 1; }
 @keyframes draw-edge { to { stroke-dashoffset: 0; } }
 .graph-node { opacity: 0; cursor: pointer; outline: none; transition: opacity .6s var(--ease); }
 .node-visual { transform: scale(.55); transition: transform .7s var(--ease); }
@@ -254,16 +254,17 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .contact-header .site-nav { background: var(--paper); color: var(--ink); border-color: var(--line); }
   .site-nav.is-open { transform: none; visibility: visible; }
   .site-nav a { min-height: 48px; display: flex; align-items: center; border-top: 1px solid currentColor; font-size: 11px; }
-  .graph-home { padding: 80px 10px 10px; gap: 9px; }
-  .graph-title { padding: 0 8px; display: grid; grid-template-columns: 1fr auto; }
-  .graph-title .eyebrow { display: none; }
+  .graph-home { padding: 80px 18px 18px; gap: 9px; }
+  .graph-title { padding: 0; display: grid; grid-template-columns: 1fr auto; }
   .graph-title h1 { font-size: 25px; }
   .graph-title > p { max-width: 130px; text-align: right; }
   .atlas-toolbar { align-items: stretch; flex-direction: column; padding: 8px; }
-  .atlas-filters { display: grid; grid-template-columns: repeat(3,1fr); }
-  .filter-button { min-height: 44px; padding: 6px 3px; }
-  .node-label { font-size: 14px; }
-  .node-label.is-small { font-size: 11px; }
+  .atlas-filters { display: grid; grid-template-columns: repeat(6,1fr); }
+  .filter-button { min-height: 44px; padding: 6px 3px; grid-column: span 2; }
+  .filter-button:nth-child(4) { grid-column: 2 / span 2; }
+  .filter-button:nth-child(5) { grid-column: 4 / span 2; }
+  .node-label { font-size: 17px; }
+  .node-label.is-small { font-size: 14px; }
   .graph-controls button { min-width: 44px; min-height: 44px; }
   .atlas-search-wrap { width: 100%; }
   .atlas-search { width: 100%; min-height: 44px; }
@@ -297,12 +298,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .pdf-viewer { height: 70svh; }
   .contact-main { min-height: auto; padding: 120px 0 75px; }
   .contact-intro { margin: 35px 0 60px; font-size: 17px; }
-  .email-link { grid-template-columns: 1fr auto; }
+  .email-link { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
   .email-link span { grid-column: 1 / -1; }
-  .email-link strong { font-size: 23px; }
+  .email-link strong { font-size: clamp(16px, 4.5vw, 19px); letter-spacing: -.02em; }
   .contact-links { grid-template-columns: 1fr; }
   .contact-links a { min-height: 150px; border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
-  .year-nav { top: 66px; margin-right: -18px; margin-left: -18px; padding: 0 18px; gap: 16px; overflow-x: auto; }
+  .year-nav { top: 66px; margin-right: -18px; margin-left: -18px; padding: 0 18px; justify-content: space-between; gap: 0; overflow-x: auto; }
   .year-nav span { display: none; }
   .timeline-intro dl { gap: 15px; }
   .repo-timeline::before { display: none; }
