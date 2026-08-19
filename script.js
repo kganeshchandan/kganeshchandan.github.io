@@ -30,8 +30,11 @@ const graph = document.querySelector('[data-graph]');
 
 if (graph) {
   const SVG_NS = 'http://www.w3.org/2000/svg';
-  const width = 900;
-  const height = 640;
+  const BASE_WIDTH = 900;
+  const BASE_HEIGHT = 640;
+  const graphStage = graph.closest('[data-atlas-stage]');
+  let width = BASE_WIDTH;
+  let height = BASE_HEIGHT;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const nodes = [
@@ -206,10 +209,29 @@ if (graph) {
   const resultCount = document.querySelector('[data-result-count]');
   const searchInput = document.querySelector('[data-atlas-search]');
   const searchResults = document.querySelector('[data-search-results]');
-  const mobileView = window.matchMedia('(max-width: 720px)').matches;
-  const defaultView = mobileView
-    ? { x: 100, y: 0, width: 650, height: 640 }
-    : { x: 0, y: 0, width: 900, height: 640 };
+
+  const measureGraph = () => {
+    const rect = graphStage.getBoundingClientRect();
+    const aspect = Math.max(.35, rect.width / Math.max(rect.height, 1));
+    if (aspect >= 1) {
+      return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 };
+    }
+    return { width: Math.max(500, BASE_HEIGHT * aspect), height: BASE_HEIGHT, mobile: rect.width <= 720 };
+  };
+
+  const initialLayout = measureGraph();
+  width = initialLayout.width;
+  height = initialLayout.height;
+  let mobileView = initialLayout.mobile;
+  nodes.forEach((node) => {
+    node.baseTx = node.tx;
+    node.baseTy = node.ty;
+    const padding = mobileView ? 58 : 42;
+    node.tx = padding + (node.baseTx / BASE_WIDTH) * (width - padding * 2);
+    node.ty = padding + (node.baseTy / BASE_HEIGHT) * (height - padding * 2);
+  });
+
+  let defaultView = { x: 0, y: 0, width, height };
   let currentView = { ...defaultView };
   let selectedId = null;
   let lastFocusedNode = null;
@@ -225,8 +247,8 @@ if (graph) {
     const width = Math.min(1400, Math.max(300, view.width));
     const height = width * (defaultView.height / defaultView.width);
     currentView = {
-      x: Math.max(-250, Math.min(1150 - width, view.x)),
-      y: Math.max(-180, Math.min(820 - height, view.y)),
+      x: Math.max(-250, Math.min(defaultView.width + 250 - width, view.x)),
+      y: Math.max(-180, Math.min(defaultView.height + 180 - height, view.y)),
       width,
       height
     };
@@ -244,6 +266,8 @@ if (graph) {
     node.x = node.tx;
     node.y = node.ty;
     node.spawned = false;
+    node.progress = 0;
+    node.growthFrame = null;
 
     const group = makeSvg('g', {
       class: 'graph-node',
@@ -255,7 +279,9 @@ if (graph) {
     });
     const visual = makeSvg('g', { class: 'node-visual' });
     const displayRadius = mobileView ? node.radius * 1.6 : node.radius;
+    node.renderRadius = displayRadius;
     const circle = makeSvg('circle', { class: 'node-ring', r: displayRadius });
+    node.circle = circle;
     visual.append(circle);
 
     const words = node.label.split(' ');
@@ -291,10 +317,26 @@ if (graph) {
     links.forEach((link) => {
       const source = nodeMap.get(link.source);
       const target = nodeMap.get(link.target);
-      link.element.setAttribute('x1', source.x);
-      link.element.setAttribute('y1', source.y);
-      link.element.setAttribute('x2', target.x);
-      link.element.setAttribute('y2', target.y);
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const distance = Math.hypot(dx, dy);
+      if (distance < .01) {
+        link.element.setAttribute('x1', source.x);
+        link.element.setAttribute('y1', source.y);
+        link.element.setAttribute('x2', source.x);
+        link.element.setAttribute('y2', source.y);
+        return;
+      }
+
+      const unitX = dx / distance;
+      const unitY = dy / distance;
+      const available = Math.max(0, distance / 2 - 1);
+      const sourceInset = Math.min(available, Math.max(0, source.renderRadius * source.progress - 1));
+      const targetInset = Math.min(available, Math.max(0, target.renderRadius * target.progress - 1));
+      link.element.setAttribute('x1', source.x + unitX * sourceInset);
+      link.element.setAttribute('y1', source.y + unitY * sourceInset);
+      link.element.setAttribute('x2', target.x - unitX * targetInset);
+      link.element.setAttribute('y2', target.y - unitY * targetInset);
     });
   };
 
@@ -433,6 +475,11 @@ if (graph) {
       }
     });
     node.element.addEventListener('pointerdown', (event) => {
+      if (node.growthFrame) {
+        cancelAnimationFrame(node.growthFrame);
+        node.growthFrame = null;
+        node.progress = 1;
+      }
       const point = clientToGraph(event);
       dragging = node;
       dragging.moved = false;
@@ -615,15 +662,57 @@ if (graph) {
 
   const spawn = () => {
     const order = ['ganesh', 'iiith', 'samsung', 'virtual-labs', 'molecular-ai', 'multimodal', 'biosensing', 'robotics', 'neuro-ai', 'software', 'smen', 'molgpt', 'bias-study', 'beds', 'jepa', 'manga', 'molvis', 'paper-spectra', 'paper-generative', 'paper-bias'];
+    const parents = {
+      iiith: 'ganesh', samsung: 'ganesh', 'virtual-labs': 'ganesh',
+      'molecular-ai': 'ganesh', multimodal: 'ganesh', 'neuro-ai': 'ganesh', software: 'ganesh',
+      biosensing: 'samsung', robotics: 'samsung', smen: 'molecular-ai', molgpt: 'molecular-ai',
+      'bias-study': 'molecular-ai', beds: 'neuro-ai', jepa: 'robotics', manga: 'software', molvis: 'software',
+      'paper-spectra': 'smen', 'paper-generative': 'molgpt', 'paper-bias': 'bias-study'
+    };
+
+    const revealConnectedEdges = () => {
+      links.forEach((link) => {
+        if (nodeMap.get(link.source).spawned && nodeMap.get(link.target).spawned) {
+          link.element.classList.add('is-visible');
+        }
+      });
+    };
+
+    const growNode = (node, parent) => {
+      const targetX = node.tx;
+      const targetY = node.ty;
+      const startX = parent ? parent.x : targetX;
+      const startY = parent ? parent.y : targetY;
+      node.x = reducedMotion ? targetX : startX;
+      node.y = reducedMotion ? targetY : startY;
+      node.progress = reducedMotion ? 1 : 0;
+      node.spawned = true;
+      node.element.classList.add('is-visible');
+      revealConnectedEdges();
+      render();
+      if (reducedMotion) return;
+
+      const startTime = performance.now();
+      const duration = 900;
+      const animate = (now) => {
+        const elapsed = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - elapsed, 3);
+        node.x = startX + (targetX - startX) * eased;
+        node.y = startY + (targetY - startY) * eased;
+        node.progress = eased;
+        render();
+        if (elapsed < 1) node.growthFrame = requestAnimationFrame(animate);
+        else node.growthFrame = null;
+      };
+      node.growthFrame = requestAnimationFrame(animate);
+    };
+
     order.forEach((id, index) => {
       window.setTimeout(() => {
         const node = nodeMap.get(id);
-        node.spawned = true;
-        node.element.classList.add('is-visible');
-        links.forEach((link) => {
-          if (nodeMap.get(link.source).spawned && nodeMap.get(link.target).spawned) link.element.classList.add('is-visible');
-        });
-      }, reducedMotion ? 0 : index * 130);
+        const parent = parents[id] ? nodeMap.get(parents[id]) : null;
+        growNode(node, parent);
+      }, reducedMotion ? 0 : index * 145);
     });
   };
 
@@ -635,6 +724,31 @@ if (graph) {
     }
   }, { threshold: .18 });
   atlasObserver.observe(graph);
+
+  const graphResizeObserver = new ResizeObserver(() => {
+    const nextLayout = measureGraph();
+    if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) return;
+
+    width = nextLayout.width;
+    height = nextLayout.height;
+    mobileView = nextLayout.mobile;
+    const padding = mobileView ? 58 : 42;
+    nodes.forEach((node) => {
+      if (node.growthFrame) cancelAnimationFrame(node.growthFrame);
+      node.growthFrame = null;
+      node.tx = padding + (node.baseTx / BASE_WIDTH) * (width - padding * 2);
+      node.ty = padding + (node.baseTy / BASE_HEIGHT) * (height - padding * 2);
+      node.x = node.tx;
+      node.y = node.ty;
+      node.progress = node.spawned ? 1 : 0;
+      node.renderRadius = mobileView ? node.radius * 1.6 : node.radius;
+      node.circle.setAttribute('r', node.renderRadius);
+    });
+    defaultView = { x: 0, y: 0, width, height };
+    setView(defaultView);
+    render();
+  });
+  graphResizeObserver.observe(graphStage);
 
 }
 
