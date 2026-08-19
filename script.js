@@ -216,7 +216,8 @@ if (graph) {
     if (aspect >= 1) {
       return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 };
     }
-    return { width: Math.max(500, BASE_HEIGHT * aspect), height: BASE_HEIGHT, mobile: rect.width <= 720 };
+    const mobile = rect.width <= 720;
+    return { width: Math.max(mobile ? 750 : 500, BASE_HEIGHT * aspect), height: BASE_HEIGHT, mobile };
   };
 
   const initialLayout = measureGraph();
@@ -514,7 +515,7 @@ if (graph) {
       panelLink.hidden = false;
       panelLink.href = node.link;
       const external = node.link.startsWith('http');
-      panelLink.textContent = external ? 'Open source ↗' : 'Explore page →';
+      panelLink.textContent = external ? 'Open source' : 'Explore page →';
       if (external) {
         panelLink.target = '_blank';
         panelLink.rel = 'noreferrer';
