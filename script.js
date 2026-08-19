@@ -220,9 +220,6 @@ if (graph) {
   let dragging = null;
   let panning = null;
   let pointerOffset = { x: 0, y: 0 };
-  let running = false;
-  let animationFrame;
-  let settleFrames = 0;
 
   const setView = (view) => {
     const width = Math.min(1400, Math.max(300, view.width));
@@ -246,8 +243,6 @@ if (graph) {
   nodes.forEach((node) => {
     node.x = node.tx;
     node.y = node.ty;
-    node.vx = 0;
-    node.vy = 0;
     node.spawned = false;
 
     const group = makeSvg('g', {
@@ -300,68 +295,6 @@ if (graph) {
       link.element.setAttribute('x2', target.x);
       link.element.setAttribute('y2', target.y);
     });
-  };
-
-  const tick = () => {
-    const visibleNodes = nodes.filter((node) => node.spawned);
-    let energy = 0;
-
-    for (let i = 0; i < visibleNodes.length; i += 1) {
-      const a = visibleNodes[i];
-      for (let j = i + 1; j < visibleNodes.length; j += 1) {
-        const b = visibleNodes[j];
-        let dx = b.x - a.x;
-        let dy = b.y - a.y;
-        const distanceSquared = Math.max(dx * dx + dy * dy, 80);
-        const distance = Math.sqrt(distanceSquared);
-        const minimum = a.radius + b.radius + 18;
-        const force = distance < minimum ? (minimum - distance) * .04 : 180 / distanceSquared;
-        dx /= distance;
-        dy /= distance;
-        if (a !== dragging) { a.vx -= dx * force; a.vy -= dy * force; }
-        if (b !== dragging) { b.vx += dx * force; b.vy += dy * force; }
-      }
-    }
-
-    links.forEach((link) => {
-      const source = nodeMap.get(link.source);
-      const target = nodeMap.get(link.target);
-      if (!source.spawned || !target.spawned) return;
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const distance = Math.max(Math.hypot(dx, dy), 1);
-      const desired = source.id === 'ganesh' ? 155 : 120;
-      const force = (distance - desired) * .00075;
-      if (source !== dragging) { source.vx += dx * force; source.vy += dy * force; }
-      if (target !== dragging) { target.vx -= dx * force; target.vy -= dy * force; }
-    });
-
-    visibleNodes.forEach((node) => {
-      if (node === dragging) return;
-      node.vx += (node.tx - node.x) * .004;
-      node.vy += (node.ty - node.y) * .004;
-      node.vx *= .88;
-      node.vy *= .88;
-      node.x = Math.max(node.radius + 10, Math.min(width - node.radius - 10, node.x + node.vx));
-      node.y = Math.max(node.radius + 10, Math.min(height - node.radius - 10, node.y + node.vy));
-      energy += Math.abs(node.vx) + Math.abs(node.vy);
-    });
-
-    render();
-    settleFrames = energy < .08 && !dragging ? settleFrames + 1 : 0;
-    if (settleFrames < 35) {
-      animationFrame = requestAnimationFrame(tick);
-    } else {
-      running = false;
-    }
-  };
-
-  const reheat = () => {
-    settleFrames = 0;
-    if (!running) {
-      running = true;
-      animationFrame = requestAnimationFrame(tick);
-    }
   };
 
   const relatedIds = (id) => new Set([
@@ -505,7 +438,6 @@ if (graph) {
       pointerOffset = { x: node.x - point.x, y: node.y - point.y };
       node.element.setPointerCapture(event.pointerId);
       graph.classList.add('is-dragging');
-      reheat();
     });
     node.element.addEventListener('pointermove', (event) => {
       if (dragging !== node) return;
@@ -513,8 +445,6 @@ if (graph) {
       if (Math.hypot(point.x + pointerOffset.x - node.x, point.y + pointerOffset.y - node.y) > 2) node.moved = true;
       node.x = Math.max(node.radius, Math.min(width - node.radius, point.x + pointerOffset.x));
       node.y = Math.max(node.radius, Math.min(height - node.radius, point.y + pointerOffset.y));
-      node.vx = 0;
-      node.vy = 0;
       render();
     });
     node.element.addEventListener('pointerup', () => {
@@ -526,13 +456,11 @@ if (graph) {
         node.ty = node.y;
       }
       setTimeout(() => { node.moved = false; }, 0);
-      reheat();
     });
     node.element.addEventListener('pointercancel', () => {
       dragging = null;
       node.moved = false;
       graph.classList.remove('is-dragging');
-      reheat();
     });
   });
 
@@ -690,14 +618,11 @@ if (graph) {
       window.setTimeout(() => {
         const node = nodeMap.get(id);
         node.spawned = true;
-        node.vx = (node.tx - node.x) * .018;
-        node.vy = (node.ty - node.y) * .018;
         node.element.classList.add('is-visible');
         links.forEach((link) => {
           if (nodeMap.get(link.source).spawned && nodeMap.get(link.target).spawned) link.element.classList.add('is-visible');
         });
-        reheat();
-      }, reducedMotion ? 0 : index * 105);
+      }, reducedMotion ? 0 : index * 130);
     });
   };
 
@@ -710,7 +635,6 @@ if (graph) {
   }, { threshold: .18 });
   atlasObserver.observe(graph);
 
-  window.addEventListener('pagehide', () => cancelAnimationFrame(animationFrame));
 }
 
 const scrollProgress = document.querySelector('[data-scroll-progress]');
