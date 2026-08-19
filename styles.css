@@ -14,7 +14,6 @@
   --aqua: #8ec07c;
   --yellow: #fabd2f;
   --sans: "Instrument Sans", "Arial Narrow", Arial, sans-serif;
-  --serif: "Newsreader", Georgia, serif;
   --mono: "DM Mono", ui-monospace, monospace;
   --type-display: clamp(68px, 9vw, 135px);
   --type-section: clamp(40px, 4vw, 56px);
@@ -126,7 +125,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .page-hero, .timeline-hero { min-height: 620px; padding: 60px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, .7fr); align-content: center; gap: clamp(50px,8vw,140px); background: var(--paper-deep); border: 1px solid var(--line); }
 .page-hero > .eyebrow, .timeline-hero > .eyebrow { grid-column: 1 / -1; margin-bottom: 0; }
 .page-hero h1, .timeline-hero h1, .contact-main h1 { margin: 0; font-size: var(--type-display); font-weight: 620; line-height: .82; letter-spacing: -.075em; }
-.page-hero h1 em, .timeline-hero h1 em, .contact-main h1 em { color: var(--signal); font-family: var(--serif); font-weight: 500; }
+.page-hero h1 em, .timeline-hero h1 em, .contact-main h1 em { color: var(--signal); font: inherit; }
 .page-intro, .timeline-intro { align-self: end; }
 .page-intro > p, .timeline-intro > p { margin: 0; color: var(--muted); font-size: 18px; }
 .hero-links { margin-top: 30px; display: flex; align-items: center; gap: 26px; }
