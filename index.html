@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Ganesh Chandan's interactive intelligence atlas: work across robotics, scientific AI, biosensing, and software engineering.">
-  <meta name="theme-color" content="#151614">
+  <meta name="theme-color" content="#1d2021">
   <link rel="canonical" href="https://kganeshchandan.github.io/">
   <meta property="og:title" content="Ganesh Chandan — Intelligence Atlas">
   <meta property="og:description" content="Explore the connected research, projects, publications, and institutions behind my work.">
@@ -51,11 +51,14 @@
           <button class="filter-button" type="button" data-filter="build" aria-pressed="false">Builds</button>
           <button class="filter-button" type="button" data-filter="publication" aria-pressed="false">Publications</button>
         </div>
-        <label class="atlas-search">
-          <span class="sr-only">Search atlas</span>
-          <input type="search" placeholder="Find a node…" data-atlas-search autocomplete="off">
-          <span aria-hidden="true">⌕</span>
-        </label>
+        <div class="atlas-search-wrap">
+          <label class="atlas-search">
+            <span class="sr-only">Search all portfolio items</span>
+            <input type="search" placeholder="Search projects, research, skills…" data-atlas-search autocomplete="off" aria-controls="portfolio-search-results" aria-expanded="false">
+            <span aria-hidden="true">⌕</span>
+          </label>
+          <div class="search-results" id="portfolio-search-results" data-search-results role="listbox" aria-label="Closest portfolio matches" hidden></div>
+        </div>
       </div>
 
       <div class="atlas-stage" data-atlas-stage>

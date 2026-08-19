@@ -11,7 +11,9 @@ A dependency-free personal website built with HTML, CSS, and JavaScript.
 
 ## Atlas interaction
 
-The home-page graph supports animated node and edge spawning, dragging, filtering, search, keyboard selection, contextual detail panels, and reduced-motion preferences. It uses native SVG and browser APIs without a graph library.
+The home-page graph supports animated node and edge spawning, dragging, filtering, fuzzy search across graph items and all public repositories, keyboard selection, contextual detail panels, and reduced-motion preferences. It uses native SVG and browser APIs without a graph library.
+
+The interface uses a consistent Gruvbox Dark Hard Material palette across every page.
 
 ## Run locally
 

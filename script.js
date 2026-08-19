@@ -137,6 +137,51 @@ if (graph) {
     }
   ];
 
+  const repositoryItems = [
+    ['hacktoberfest', 'C · first-contribution fork'],
+    ['awesome-for-beginners', 'Open-source contribution resources · fork'],
+    ['JobsHub', 'MERN-stack jobs platform · JavaScript'],
+    ['AAD-Project', 'Blockchain web application · fork'],
+    ['tgbot', 'Telegram administration bot · fork'],
+    ['SpaceOdyssey', 'Two-player Pygame rocket game'],
+    ['kaizoe_bot', 'Multipurpose Telegram bot · fork'],
+    ['SpotifyAddBlocker', 'Desktop shell utility for Spotify'],
+    ['BlockBreakerVII', 'Object-oriented Python Breakout game'],
+    ['sim-CNNDTA', 'Drug–target affinity experiments · deep learning'],
+    ['Operating-Systems-and-Networks', 'Systems and networking coursework · C'],
+    ['MyDotfiles', 'Personal Vim and development configuration'],
+    ['Multi-Handwritten-digit-recognition-CNN', 'PyTorch and OpenCV digit recognition'],
+    ['dd_code', 'Binding-affinity dataset bias research code'],
+    ['kganeshchandan', 'GitHub profile and statistics'],
+    ['kganeshchandan.github.io', 'Interactive personal portfolio'],
+    ['Tute12_data', 'ESOL and Tox21 molecular datasets'],
+    ['3JS', 'Three.js atom and crystal simulation prototype'],
+    ['d4-course-projs', 'Explainable drug–target and reinforcement learning coursework'],
+    ['visiting-phd-exercises', 'AI, ML, PyTorch, RDKit, and chemistry tutorials'],
+    ['CLIP_FULL', 'Spectra–molecule contrastive learning research code'],
+    ['github-stats', 'GitHub Actions statistics visualizer'],
+    ['SimpleRDBMS', 'C++ relational database coursework'],
+    ['Spectra2Structure', 'Published spectra-to-molecule training implementation']
+  ].map(([label, description]) => ({
+    id: `repo-${label.toLowerCase()}`,
+    label,
+    description,
+    type: 'Repository',
+    url: `https://github.com/kganeshchandan/${label}`
+  }));
+
+  const portfolioItems = [
+    ...nodes.map((node) => ({
+      id: node.id,
+      nodeId: node.id,
+      label: node.label,
+      description: `${node.description} ${Object.values(node.meta).join(' ')}`,
+      type: node.kind === 'paper' ? 'Publication' : node.kind === 'place' ? 'Institution' : node.kind === 'domain' ? 'Domain' : node.kind === 'root' ? 'Profile' : 'Project',
+      url: node.link
+    })),
+    ...repositoryItems
+  ];
+
   const links = [
     ['ganesh', 'iiith'], ['ganesh', 'samsung'], ['ganesh', 'virtual-labs'],
     ['ganesh', 'molecular-ai'], ['ganesh', 'multimodal'], ['ganesh', 'neuro-ai'], ['ganesh', 'software'],
@@ -159,6 +204,8 @@ if (graph) {
   const panelMeta = panel.querySelector('[data-panel-meta]');
   const panelLink = panel.querySelector('[data-panel-link]');
   const resultCount = document.querySelector('[data-result-count]');
+  const searchInput = document.querySelector('[data-atlas-search]');
+  const searchResults = document.querySelector('[data-search-results]');
   const mobileView = window.matchMedia('(max-width: 720px)').matches;
   const defaultView = mobileView
     ? { x: 250, y: 0, width: 400, height: 640 }
@@ -168,6 +215,8 @@ if (graph) {
   let lastFocusedNode = null;
   let activeFilter = 'all';
   let searchTerm = '';
+  let searchMatches = new Set();
+  let rankedResults = [];
   let dragging = null;
   let panning = null;
   let pointerOffset = { x: 0, y: 0 };
@@ -321,6 +370,42 @@ if (graph) {
     ...links.filter((link) => link.target === id).map((link) => link.source)
   ]);
 
+  const normalizeSearch = (value) => value.toLowerCase().replace(/[^a-z0-9+#]+/g, ' ').trim();
+
+  const editDistance = (left, right) => {
+    const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+    for (let i = 1; i <= left.length; i += 1) {
+      let diagonal = previous[0];
+      previous[0] = i;
+      for (let j = 1; j <= right.length; j += 1) {
+        const above = previous[j];
+        previous[j] = left[i - 1] === right[j - 1]
+          ? diagonal
+          : 1 + Math.min(diagonal, previous[j - 1], above);
+        diagonal = above;
+      }
+    }
+    return previous[right.length];
+  };
+
+  const searchScore = (item, query) => {
+    const label = normalizeSearch(item.label);
+    const text = normalizeSearch(`${item.label} ${item.description} ${item.type}`);
+    if (label === query) return 0;
+    if (label.startsWith(query)) return .02 + (label.length - query.length) / 1000;
+    if (label.includes(query)) return .08 + label.indexOf(query) / 100;
+    if (text.includes(query)) return .18 + text.indexOf(query) / 1000;
+
+    const queryWords = query.split(' ');
+    const textWords = text.split(' ');
+    const tokenScore = queryWords.reduce((total, queryWord) => {
+      const closest = Math.min(...textWords.map((word) => editDistance(queryWord, word) / Math.max(queryWord.length, word.length, 1)));
+      return total + closest;
+    }, 0) / queryWords.length;
+    const labelScore = editDistance(query, label) / Math.max(query.length, label.length, 1);
+    return .25 + Math.min(tokenScore, labelScore);
+  };
+
   const applyVisibility = () => {
     const publicationContext = new Set(['ganesh', 'iiith', 'molecular-ai', 'multimodal', 'smen', 'molgpt', 'bias-study']);
     const matching = new Set(nodes.filter((node) => {
@@ -328,8 +413,7 @@ if (graph) {
         || node.group === activeFilter
         || node.id === 'ganesh'
         || (activeFilter === 'publication' && publicationContext.has(node.id));
-      const haystack = `${node.label} ${node.description} ${Object.values(node.meta).join(' ')}`.toLowerCase();
-      const searchMatch = !searchTerm || haystack.includes(searchTerm);
+      const searchMatch = !searchTerm || searchMatches.has(node.id);
       return filterMatch && searchMatch;
     }).map((node) => node.id));
 
@@ -507,11 +591,97 @@ if (graph) {
     });
   });
 
-  document.querySelector('[data-atlas-search]')?.addEventListener('input', (event) => {
-    searchTerm = event.target.value.trim().toLowerCase();
+  const hideSearchResults = () => {
+    searchResults.hidden = true;
+    searchInput.setAttribute('aria-expanded', 'false');
+  };
+
+  const selectSearchItem = (item) => {
+    hideSearchResults();
+    if (item.nodeId) {
+      const node = nodeMap.get(item.nodeId);
+      inspectNode(node);
+      const focusWidth = mobileView ? 400 : 650;
+      setView({ x: node.x - focusWidth / 2, y: node.y - (focusWidth * defaultView.height / defaultView.width) / 2, width: focusWidth });
+    } else if (item.url) {
+      window.open(item.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const renderSearchResults = () => {
+    searchResults.replaceChildren();
+    rankedResults.forEach((item, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'search-result';
+      button.setAttribute('role', 'option');
+      button.dataset.searchIndex = String(index);
+
+      const title = document.createElement('strong');
+      title.textContent = item.label;
+      const type = document.createElement('span');
+      type.textContent = item.type;
+      const description = document.createElement('small');
+      description.textContent = item.description;
+      button.append(title, type, description);
+      button.addEventListener('click', () => selectSearchItem(item));
+      searchResults.append(button);
+    });
+    searchResults.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
+  };
+
+  searchInput?.addEventListener('input', (event) => {
+    searchTerm = normalizeSearch(event.target.value);
     selectedId = null;
     panel.classList.remove('is-open');
+    if (!searchTerm) {
+      rankedResults = [];
+      searchMatches = new Set();
+      hideSearchResults();
+      applyVisibility();
+      return;
+    }
+
+    rankedResults = portfolioItems
+      .map((item) => ({ ...item, score: searchScore(item, searchTerm) }))
+      .sort((left, right) => left.score - right.score || left.label.localeCompare(right.label))
+      .slice(0, 5);
+    searchMatches = new Set(rankedResults.map((item) => item.nodeId).filter(Boolean));
+    renderSearchResults();
     applyVisibility();
+  });
+
+  searchInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' && rankedResults.length) {
+      event.preventDefault();
+      searchResults.querySelector('.search-result')?.focus();
+    } else if (event.key === 'Enter' && rankedResults.length) {
+      event.preventDefault();
+      selectSearchItem(rankedResults[0]);
+    } else if (event.key === 'Escape') {
+      hideSearchResults();
+    }
+  });
+
+  searchResults?.addEventListener('keydown', (event) => {
+    const options = [...searchResults.querySelectorAll('.search-result')];
+    const index = options.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      options[Math.min(index + 1, options.length - 1)]?.focus();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (index <= 0) searchInput.focus();
+      else options[index - 1].focus();
+    } else if (event.key === 'Escape') {
+      hideSearchResults();
+      searchInput.focus();
+    }
+  });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!event.target.closest('.atlas-search-wrap')) hideSearchResults();
   });
 
   const spawn = () => {
