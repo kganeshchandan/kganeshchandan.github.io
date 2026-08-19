@@ -241,6 +241,8 @@ if (graph) {
   let rankedResults = [];
   let dragging = null;
   let panning = null;
+  let simulationFrame = null;
+  let simulationEnergy = 0;
   let pointerOffset = { x: 0, y: 0 };
 
   const setView = (view) => {
@@ -267,6 +269,8 @@ if (graph) {
     node.y = node.ty;
     node.spawned = false;
     node.progress = 0;
+    node.vx = 0;
+    node.vy = 0;
     node.growthFrame = null;
 
     const group = makeSvg('g', {
@@ -317,28 +321,104 @@ if (graph) {
     links.forEach((link) => {
       const source = nodeMap.get(link.source);
       const target = nodeMap.get(link.target);
-      const dx = target.x - source.x;
-      const dy = target.y - source.y;
-      const distance = Math.hypot(dx, dy);
-      if (distance < .01) {
-        link.element.setAttribute('x1', source.x);
-        link.element.setAttribute('y1', source.y);
-        link.element.setAttribute('x2', source.x);
-        link.element.setAttribute('y2', source.y);
-        return;
-      }
-
-      const unitX = dx / distance;
-      const unitY = dy / distance;
-      const available = Math.max(0, distance / 2 - 1);
-      const sourceInset = Math.min(available, Math.max(0, source.renderRadius * source.progress - 1));
-      const targetInset = Math.min(available, Math.max(0, target.renderRadius * target.progress - 1));
-      link.element.setAttribute('x1', source.x + unitX * sourceInset);
-      link.element.setAttribute('y1', source.y + unitY * sourceInset);
-      link.element.setAttribute('x2', target.x - unitX * targetInset);
-      link.element.setAttribute('y2', target.y - unitY * targetInset);
+      // Edges run behind the opaque nodes, so their visible ends always meet
+      // the rendered circle boundary—even while a node scales or the layout moves.
+      link.element.setAttribute('x1', source.x);
+      link.element.setAttribute('y1', source.y);
+      link.element.setAttribute('x2', target.x);
+      link.element.setAttribute('y2', target.y);
     });
   };
+
+  const refreshLinkLengths = () => {
+    links.forEach((link) => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      link.restLength = Math.hypot(target.tx - source.tx, target.ty - source.ty);
+    });
+  };
+
+  const simulate = () => {
+    const activeNodes = nodes.filter((node) => node.spawned);
+    activeNodes.forEach((node) => {
+      node.vx *= .88;
+      node.vy *= .88;
+      node.vx += (node.tx - node.x) * .0006;
+      node.vy += (node.ty - node.y) * .0006;
+    });
+
+    for (let i = 0; i < activeNodes.length; i += 1) {
+      for (let j = i + 1; j < activeNodes.length; j += 1) {
+        const left = activeNodes[i];
+        const right = activeNodes[j];
+        let dx = right.x - left.x;
+        let dy = right.y - left.y;
+        let distance = Math.hypot(dx, dy);
+        if (distance < .01) {
+          dx = (j - i) % 2 ? 1 : -1;
+          dy = 1;
+          distance = Math.SQRT2;
+        }
+        const minimumDistance = left.renderRadius + right.renderRadius + 10;
+        const force = 700 / (distance * distance) + Math.max(0, minimumDistance - distance) * .025;
+        const forceX = (dx / distance) * force;
+        const forceY = (dy / distance) * force;
+        if (left !== dragging) {
+          left.vx -= forceX;
+          left.vy -= forceY;
+        }
+        if (right !== dragging) {
+          right.vx += forceX;
+          right.vy += forceY;
+        }
+      }
+    }
+
+    links.forEach((link) => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      if (!source.spawned || !target.spawned) return;
+      const dx = target.x - source.x;
+      const dy = target.y - source.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const force = (distance - link.restLength) * .004;
+      const forceX = (dx / distance) * force;
+      const forceY = (dy / distance) * force;
+      if (source !== dragging) {
+        source.vx += forceX;
+        source.vy += forceY;
+      }
+      if (target !== dragging) {
+        target.vx -= forceX;
+        target.vy -= forceY;
+      }
+    });
+
+    let motion = 0;
+    activeNodes.forEach((node) => {
+      if (node === dragging) {
+        node.vx = 0;
+        node.vy = 0;
+        return;
+      }
+      node.x = Math.max(node.renderRadius, Math.min(width - node.renderRadius, node.x + node.vx));
+      node.y = Math.max(node.renderRadius, Math.min(height - node.renderRadius, node.y + node.vy));
+      motion += Math.abs(node.vx) + Math.abs(node.vy);
+    });
+    render();
+
+    simulationEnergy *= .985;
+    if (dragging || simulationEnergy > .02 || motion > .08) simulationFrame = requestAnimationFrame(simulate);
+    else simulationFrame = null;
+  };
+
+  const wakeSimulation = (energy = 1) => {
+    if (reducedMotion) return;
+    simulationEnergy = Math.max(simulationEnergy, energy);
+    if (!simulationFrame) simulationFrame = requestAnimationFrame(simulate);
+  };
+
+  refreshLinkLengths();
 
   const relatedIds = (id) => new Set([
     id,
@@ -486,29 +566,28 @@ if (graph) {
       pointerOffset = { x: node.x - point.x, y: node.y - point.y };
       node.element.setPointerCapture(event.pointerId);
       graph.classList.add('is-dragging');
+      wakeSimulation(.8);
     });
     node.element.addEventListener('pointermove', (event) => {
       if (dragging !== node) return;
       const point = clientToGraph(event);
       if (Math.hypot(point.x + pointerOffset.x - node.x, point.y + pointerOffset.y - node.y) > 2) node.moved = true;
-      node.x = Math.max(node.radius, Math.min(width - node.radius, point.x + pointerOffset.x));
-      node.y = Math.max(node.radius, Math.min(height - node.radius, point.y + pointerOffset.y));
+      node.x = Math.max(node.renderRadius, Math.min(width - node.renderRadius, point.x + pointerOffset.x));
+      node.y = Math.max(node.renderRadius, Math.min(height - node.renderRadius, point.y + pointerOffset.y));
+      wakeSimulation(1);
       render();
     });
     node.element.addEventListener('pointerup', () => {
-      const wasMoved = node.moved;
       dragging = null;
       graph.classList.remove('is-dragging');
-      if (wasMoved) {
-        node.tx = node.x;
-        node.ty = node.y;
-      }
+      wakeSimulation(1);
       setTimeout(() => { node.moved = false; }, 0);
     });
     node.element.addEventListener('pointercancel', () => {
       dragging = null;
       node.moved = false;
       graph.classList.remove('is-dragging');
+      wakeSimulation(.8);
     });
   });
 
@@ -714,6 +793,11 @@ if (graph) {
         growNode(node, parent);
       }, reducedMotion ? 0 : index * 145);
     });
+
+    window.setTimeout(() => {
+      refreshLinkLengths();
+      wakeSimulation(.75);
+    }, reducedMotion ? 0 : (order.length - 1) * 145 + 900);
   };
 
   render();
@@ -740,13 +824,17 @@ if (graph) {
       node.ty = padding + (node.baseTy / BASE_HEIGHT) * (height - padding * 2);
       node.x = node.tx;
       node.y = node.ty;
+      node.vx = 0;
+      node.vy = 0;
       node.progress = node.spawned ? 1 : 0;
       node.renderRadius = mobileView ? node.radius * 1.6 : node.radius;
       node.circle.setAttribute('r', node.renderRadius);
     });
+    refreshLinkLengths();
     defaultView = { x: 0, y: 0, width, height };
     setView(defaultView);
     render();
+    wakeSimulation(.5);
   });
   graphResizeObserver.observe(graphStage);
 
