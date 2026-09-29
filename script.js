@@ -23,7 +23,8 @@ menuToggle?.addEventListener('click', () => {
 });
 nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()));
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeMenu(true);
+  // Only claim Escape while the menu is actually open, so it never steals focus from other widgets.
+  if (event.key === 'Escape' && menuToggle?.getAttribute('aria-expanded') === 'true') closeMenu(true);
 });
 
 const graph = document.querySelector('[data-graph]');
@@ -216,8 +217,11 @@ if (graph) {
     if (aspect >= 1) {
       return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 };
     }
+    // Portrait canvases get a taller frame of the same shape, so the layout fills the stage
+    // instead of sitting in a letterboxed band across the middle.
     const mobile = rect.width <= 720;
-    return { width: Math.max(mobile ? 750 : 500, BASE_HEIGHT * aspect), height: BASE_HEIGHT, mobile };
+    const portraitWidth = Math.max(mobile ? 640 : 500, BASE_HEIGHT * aspect);
+    return { width: portraitWidth, height: Math.max(BASE_HEIGHT, portraitWidth / aspect), mobile };
   };
 
   const initialLayout = measureGraph();
@@ -241,6 +245,19 @@ if (graph) {
     node.ty = padding + ((node.baseTy - layoutBounds.minY) / (layoutBounds.maxY - layoutBounds.minY)) * (height - padding * 2);
   };
   nodes.forEach(placeNode);
+
+  // Screentone is drawn in graph units, so a small canvas would shrink it to a grey smear.
+  // Scale the pattern up until each dot and hatch line prints at a readable size on screen.
+  const toneDots = graph.querySelector('#tone-dots');
+  const toneHatch = graph.querySelector('#tone-hatch');
+  const fitScreentone = () => {
+    const rect = graphStage.getBoundingClientRect();
+    const scale = Math.min(rect.width / width, rect.height / height) || 1;
+    const grow = Math.max(1, 1.4 / scale).toFixed(2);
+    toneDots?.setAttribute('patternTransform', `scale(${grow})`);
+    toneHatch?.setAttribute('patternTransform', `rotate(45) scale(${grow})`);
+  };
+  fitScreentone();
 
   let defaultView = { x: 0, y: 0, width, height };
   let currentView = { ...defaultView };
@@ -269,11 +286,41 @@ if (graph) {
   };
   setView(currentView);
 
-  // Shrink a label until its longest line fits inside the circle (DM Mono glyphs are ~.6em wide).
+  // Ease the camera to a new view; any direct pan, zoom or resize cancels the glide.
+  let viewFrame = null;
+  const stopGlide = () => {
+    if (viewFrame) cancelAnimationFrame(viewFrame);
+    viewFrame = null;
+  };
+  const glideView = (target) => {
+    stopGlide();
+    if (reducedMotion) {
+      setView(target);
+      return;
+    }
+    const from = { ...currentView };
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / 360);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setView({ x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased, width: from.width + (target.width - from.width) * eased });
+      viewFrame = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    viewFrame = requestAnimationFrame(step);
+  };
+
+  // Shrink a label until its widest line fits inside the circle. Measure the real glyphs when the
+  // label is rendered (proportional lettering varies a lot); otherwise estimate from character count.
   const sizeLabel = (node) => {
-    const longest = Math.max(...node.labelLines.map((line) => line.length));
     const baseSize = mobileView ? 17 : 9;
-    const fitSize = (node.renderRadius * 2 * .8) / (longest * .6);
+    const room = node.renderRadius * 2 * .8;
+    node.text.style.fontSize = `${baseSize}px`;
+    const lines = [...node.text.querySelectorAll('tspan')];
+    const widest = node.text.isConnected
+      ? Math.max(...(lines.length ? lines : [node.text]).map((line) => line.getComputedTextLength()))
+      : 0;
+    const longest = Math.max(...node.labelLines.map((line) => line.length));
+    const fitSize = widest > 0 ? baseSize * room / widest : room / (longest * .6);
     node.text.style.fontSize = `${Math.min(baseSize, fitSize).toFixed(2)}px`;
   };
 
@@ -305,7 +352,9 @@ if (graph) {
     node.renderRadius = displayRadius;
     const circle = makeSvg('circle', { class: 'node-ring', r: displayRadius });
     node.circle = circle;
-    visual.append(circle);
+    // Keyboard focus ring, drawn just outside the node so it reads on every fill style.
+    node.focusRing = makeSvg('circle', { class: 'node-focus', r: displayRadius + 7 });
+    visual.append(node.focusRing, circle);
 
     const words = node.label.split(' ');
     const text = makeSvg('text', { class: 'node-label' });
@@ -323,12 +372,14 @@ if (graph) {
       text.textContent = node.label;
     }
     node.text = text;
-    sizeLabel(node);
     visual.append(text);
     group.append(visual);
     nodeLayer.append(group);
     node.element = group;
+    sizeLabel(node);
   });
+  // Web fonts arrive after first paint; refit the lettering once they are in.
+  document.fonts?.ready.then(() => nodes.forEach(sizeLabel));
 
   links.forEach((link) => {
     const line = makeSvg('line', { class: 'graph-edge', pathLength: '1' });
@@ -336,7 +387,44 @@ if (graph) {
     link.element = line;
   });
 
+  // Focus lines drawn around a node: a faint set behind the root, a full set behind the selection.
+  // Coordinates are in units of the node's radius, so one transform scales them to any node.
+  let seed = 7;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const makeBurst = (extraClass) => {
+    const burst = makeSvg('g', { class: `focus-burst ${extraClass}`, 'aria-hidden': 'true' });
+    for (let i = 0; i < 64; i += 1) {
+      const angle = (i / 64) * Math.PI * 2 + random() * .08;
+      const inner = 1.25 + random() * .35;
+      const outer = inner + .7 + random() * 1.3;
+      burst.append(makeSvg('line', {
+        x1: (Math.cos(angle) * inner).toFixed(3), y1: (Math.sin(angle) * inner).toFixed(3),
+        x2: (Math.cos(angle) * outer).toFixed(3), y2: (Math.sin(angle) * outer).toFixed(3),
+        'stroke-width': (.6 + random() * 1.8).toFixed(2)
+      }));
+    }
+    graph.insertBefore(burst, nodeLayer);
+    return burst;
+  };
+  const rootBurst = makeBurst('is-root');
+  const selectionBurst = makeBurst('is-selection');
+  const placeBurst = (burst, node) => {
+    burst.setAttribute('transform', `translate(${node.x.toFixed(2)} ${node.y.toFixed(2)}) scale(${node.renderRadius.toFixed(2)})`);
+  };
+  const updateBursts = () => {
+    const root = nodeMap.get('ganesh');
+    const selected = selectedId ? nodeMap.get(selectedId) : null;
+    rootBurst.classList.toggle('is-on', Boolean(root?.spawned) && !root.element.classList.contains('is-muted') && selected !== root);
+    selectionBurst.classList.toggle('is-on', Boolean(selected));
+    if (root) placeBurst(rootBurst, root);
+    if (selected) placeBurst(selectionBurst, selected);
+  };
+
   const render = () => {
+    updateBursts();
     nodes.forEach((node) => {
       node.element.setAttribute('transform', `translate(${node.x.toFixed(2)} ${node.y.toFixed(2)})`);
     });
@@ -364,8 +452,13 @@ if (graph) {
   const clampX = (node, x) => Math.max(node.renderRadius + EDGE_GAP, Math.min(width - node.renderRadius - EDGE_GAP, x));
   const clampY = (node, y) => Math.max(node.renderRadius + EDGE_GAP, Math.min(height - node.renderRadius - EDGE_GAP, y));
 
+  const MAX_SPEED = 9;
+  // Nodes still growing out of their parent follow their own tween; letting the physics
+  // see them would put two nodes on the same point and fling the parent across the canvas.
+  const isSettled = (node) => node.spawned && !node.growthFrame;
+
   const simulate = () => {
-    const activeNodes = nodes.filter((node) => node.spawned);
+    const activeNodes = nodes.filter(isSettled);
     activeNodes.forEach((node) => {
       node.vx *= .88;
       node.vy *= .88;
@@ -386,7 +479,8 @@ if (graph) {
           distance = Math.SQRT2;
         }
         const minimumDistance = left.renderRadius + right.renderRadius + 10;
-        const force = 700 / (distance * distance) + Math.max(0, minimumDistance - distance) * .025;
+        const falloff = Math.max(distance, minimumDistance * .5);
+        const force = 700 / (falloff * falloff) + Math.max(0, minimumDistance - distance) * .025;
         const forceX = (dx / distance) * force;
         const forceY = (dy / distance) * force;
         if (left !== dragging) {
@@ -403,7 +497,7 @@ if (graph) {
     links.forEach((link) => {
       const source = nodeMap.get(link.source);
       const target = nodeMap.get(link.target);
-      if (!source.spawned || !target.spawned) return;
+      if (!isSettled(source) || !isSettled(target)) return;
       const dx = target.x - source.x;
       const dy = target.y - source.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
@@ -426,6 +520,11 @@ if (graph) {
         node.vx = 0;
         node.vy = 0;
         return;
+      }
+      const speed = Math.hypot(node.vx, node.vy);
+      if (speed > MAX_SPEED) {
+        node.vx *= MAX_SPEED / speed;
+        node.vy *= MAX_SPEED / speed;
       }
       node.x = clampX(node, node.x + node.vx);
       node.y = clampY(node, node.y + node.vy);
@@ -485,7 +584,8 @@ if (graph) {
       return total + closest;
     }, 0) / queryWords.length;
     const labelScore = editDistance(query, label) / Math.max(query.length, label.length, 1);
-    return .25 + Math.min(tokenScore, labelScore);
+    // Break ties in favour of the item whose own name is closest to the query.
+    return .25 + Math.min(tokenScore, labelScore) + labelScore / 100;
   };
 
   const applyVisibility = () => {
@@ -519,9 +619,35 @@ if (graph) {
       link.element.classList.toggle('is-muted', Boolean(filterMuted || (selectedId && !related)));
       link.element.classList.toggle('is-related', Boolean(related && !filterMuted));
     });
+
+    updateBursts();
   };
 
-  const inspectNode = (node, moveFocus = false) => {
+  // The detail panel sits over the canvas (right-hand card on desktop, bottom sheet on phones).
+  // If it would cover the node being inspected, slide the view so the node stays in sight.
+  const keepClearOfPanel = (node, view = currentView) => {
+    const stageRect = graphStage.getBoundingClientRect();
+    const scale = Math.min(stageRect.width / view.width, stageRect.height / view.height);
+    const offsetX = (stageRect.width - view.width * scale) / 2;
+    const offsetY = (stageRect.height - view.height * scale) / 2;
+    const x = offsetX + (node.x - view.x) * scale;
+    const y = offsetY + (node.y - view.y) * scale;
+    const reach = node.renderRadius * scale + 20;
+    const box = { left: panel.offsetLeft, top: panel.offsetTop, right: panel.offsetLeft + panel.offsetWidth, bottom: panel.offsetTop + panel.offsetHeight };
+    const covered = x + reach > box.left && x - reach < box.right && y + reach > box.top && y - reach < box.bottom;
+    if (!covered) {
+      if (view !== currentView) glideView(view);
+      return;
+    }
+    const dockedRight = box.left > stageRect.width * .35;
+    glideView({
+      ...view,
+      x: view.x + (dockedRight ? (x - box.left / 2) / scale : 0),
+      y: view.y + (dockedRight ? 0 : (y - box.top / 2) / scale)
+    });
+  };
+
+  const inspectNode = (node, moveFocus = false, view = currentView) => {
     selectedId = node.id;
     lastFocusedNode = node;
     panelType.textContent = node.kind === 'paper' ? 'Publication' : node.kind === 'place' ? 'Institution' : node.kind === 'domain' ? 'Domain' : node.kind === 'root' ? 'Profile' : 'Project';
@@ -553,6 +679,7 @@ if (graph) {
     }
     panel.classList.add('is-open');
     applyVisibility();
+    keepClearOfPanel(node, view);
     if (moveFocus) panel.focus();
   };
 
@@ -617,6 +744,7 @@ if (graph) {
 
   graph.addEventListener('pointerdown', (event) => {
     if (event.target.closest('.graph-node')) return;
+    stopGlide();
     panning = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, view: { ...currentView } };
     graph.setPointerCapture(event.pointerId);
     graph.classList.add('is-dragging');
@@ -638,6 +766,7 @@ if (graph) {
   graph.addEventListener('pointercancel', stopPanning);
 
   const zoomAt = (factor, point = { x: currentView.x + currentView.width / 2, y: currentView.y + currentView.height / 2 }) => {
+    stopGlide();
     const newWidth = currentView.width * factor;
     const xRatio = (point.x - currentView.x) / currentView.width;
     const yRatio = (point.y - currentView.y) / currentView.height;
@@ -650,12 +779,18 @@ if (graph) {
   }, { passive: false });
   document.querySelectorAll('[data-graph-zoom]').forEach((button) => {
     button.addEventListener('click', () => {
-      if (button.dataset.graphZoom === 'reset') setView({ ...defaultView });
+      if (button.dataset.graphZoom === 'reset') {
+        stopGlide();
+        setView({ ...defaultView });
+      }
       else zoomAt(button.dataset.graphZoom === 'in' ? .8 : 1.25);
     });
   });
 
   document.querySelector('[data-panel-close]')?.addEventListener('click', () => closePanel());
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && panel.classList.contains('is-open') && !event.target.closest?.('.atlas-search-wrap')) closePanel();
+  });
 
   document.querySelectorAll('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -679,9 +814,8 @@ if (graph) {
     hideSearchResults();
     if (item.nodeId) {
       const node = nodeMap.get(item.nodeId);
-      inspectNode(node);
       const focusWidth = mobileView ? 400 : 650;
-      setView({ x: node.x - focusWidth / 2, y: node.y - (focusWidth * defaultView.height / defaultView.width) / 2, width: focusWidth });
+      inspectNode(node, false, { x: node.x - focusWidth / 2, y: node.y - (focusWidth * defaultView.height / defaultView.width) / 2, width: focusWidth, height: focusWidth * defaultView.height / defaultView.width });
     } else if (item.url) {
       window.open(item.url, '_blank', 'noopener,noreferrer');
     }
@@ -722,12 +856,18 @@ if (graph) {
       return;
     }
 
-    rankedResults = portfolioItems
+    const scored = portfolioItems
       .map((item) => ({ ...item, score: searchScore(item, searchTerm) }))
-      .sort((left, right) => left.score - right.score || left.label.localeCompare(right.label))
-      .slice(0, 5);
+      .sort((left, right) => left.score - right.score || left.label.localeCompare(right.label));
+    // Fuzzy (typo-tolerant) guesses only fill the list when nothing actually contains the query;
+    // otherwise they would light up unrelated nodes next to a real hit.
+    const direct = scored.filter((item) => item.score < .25);
+    const near = scored.filter((item) => item.score < .7);
+    rankedResults = (direct.length ? direct : near).slice(0, 5);
     searchMatches = new Set(rankedResults.map((item) => item.nodeId).filter(Boolean));
-    renderSearchResults();
+    // Nothing close: every node dims and the count drops to zero rather than listing random items.
+    if (rankedResults.length) renderSearchResults();
+    else hideSearchResults();
     applyVisibility();
   });
 
@@ -849,7 +989,10 @@ if (graph) {
 
   const graphResizeObserver = new ResizeObserver(() => {
     const nextLayout = measureGraph();
-    if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) return;
+    if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) {
+      fitScreentone();
+      return;
+    }
 
     width = nextLayout.width;
     height = nextLayout.height;
@@ -865,12 +1008,16 @@ if (graph) {
       node.progress = node.spawned ? 1 : 0;
       node.renderRadius = node.radius * (mobileView ? 1.45 : .9);
       node.circle.setAttribute('r', node.renderRadius);
+      node.focusRing.setAttribute('r', node.renderRadius + 7);
       sizeLabel(node);
     });
     refreshLinkLengths();
     defaultView = { x: 0, y: 0, width, height };
+    fitScreentone();
+    stopGlide();
     setView(defaultView);
     render();
+    if (selectedId) keepClearOfPanel(nodeMap.get(selectedId));
     wakeSimulation(.5);
   });
   graphResizeObserver.observe(graphStage);
@@ -900,6 +1047,11 @@ if (dial) {
   const monthCells = [...dial.querySelectorAll('[data-dial-months] li')];
   const yearLinks = [...dial.querySelectorAll('.dial-years a')];
   const monthOf = (entry) => new Date(entry.querySelector('time').dateTime).getUTCMonth();
+  // A year's first entry turns over when its section header reaches the reading line, so the dial
+  // never keeps showing last year while the new year's heading is already on screen.
+  const triggers = entries.map((entry) => (entry === entry.parentElement.firstElementChild
+    ? entry.closest('[data-timeline-year]').querySelector('header')
+    : entry));
   let current = null;
 
   const showEntry = (entry) => {
@@ -939,8 +1091,8 @@ if (dial) {
     pending = false;
     const line = window.innerHeight * .4;
     let active = entries[0];
-    for (const entry of entries) {
-      if (entry.getBoundingClientRect().top <= line) active = entry;
+    for (const [index, entry] of entries.entries()) {
+      if (triggers[index].getBoundingClientRect().top <= line) active = entry;
       else break;
     }
     showEntry(active);
