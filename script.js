@@ -41,102 +41,102 @@ if (graph) {
   const nodes = [
     {
       id: 'ganesh', label: 'Ganesh', kind: 'root', group: 'all', tx: 450, ty: 315, radius: 43,
-      description: 'Software engineer and AI researcher connecting scientific questions, human signals, and intelligent machines.',
+      description: 'Software engineer and researcher. I build AI for robotics, wearable health sensing and molecular science.',
       meta: { Focus: 'Robotics & AI', Base: 'Bangalore, India' }, link: 'resume.html'
     },
     {
       id: 'iiith', label: 'IIIT-H', kind: 'place', group: 'research', tx: 390, ty: 105, radius: 32,
-      description: 'Integrated B.Tech and M.S. by Research, followed by three years of computational-science research.',
+      description: 'Where I did an integrated B.Tech and M.S. by Research, including three years of research in computational science.',
       meta: { Period: '2019–2024', Recognition: 'Academic Research Award' }, link: 'timeline.html#year-2021'
     },
     {
       id: 'samsung', label: 'Samsung', kind: 'place', group: 'professional', tx: 690, ty: 310, radius: 34,
-      description: 'Senior Software Engineer in the Advanced Research and Standards Team, currently focused on robotics and AI.',
+      description: 'I\'m a Senior Software Engineer in the Advanced Research and Standards team, working on robotics and AI.',
       meta: { Since: 'July 2024', Awards: 'Excellence · Spot' }, link: 'resume.html'
     },
     {
       id: 'virtual-labs', label: 'Virtual Labs', kind: 'place', group: 'build', tx: 380, ty: 545, radius: 31,
-      description: 'Interactive Three.js simulations of solid-state chemistry experiments for a Ministry of Education initiative.',
+      description: 'I built Three.js simulations of solid-state chemistry experiments for a Ministry of Education project.',
       meta: { Role: 'Software Developer', Period: '2022–2023' }, link: 'timeline.html#year-2022'
     },
     {
       id: 'molecular-ai', label: 'Molecular AI', kind: 'domain', group: 'research', tx: 215, ty: 220, radius: 34,
-      description: 'Generative models and learned representations for molecules, properties, and drug discovery.',
+      description: 'Using generative models to design molecules and predict their properties, mostly for drug discovery.',
       meta: { Methods: 'GNNs · GPT · Diffusion', Domain: 'Scientific AI' }
     },
     {
       id: 'multimodal', label: 'Multimodal', kind: 'domain', group: 'research', tx: 330, ty: 300, radius: 31,
-      description: 'Learning shared representations across molecular graphs, spectra, images, language, and neural signals.',
+      description: 'Training models that link different kinds of data: molecular graphs, spectra, images, text and brain signals.',
       meta: { Modalities: 'Graphs · Spectra · fMRI', Method: 'Contrastive learning' }
     },
     {
       id: 'biosensing', label: 'Biosensing', kind: 'domain', group: 'professional', tx: 630, ty: 185, radius: 32,
-      description: 'AI for wearable PPG and audio signals, including heart health, hydration, glucose, and machine health.',
+      description: 'AI on PPG and audio signals from wearables, for heart health, hydration, glucose and machine health.',
       meta: { Evidence: '2 patents filed', Platform: 'Wearable edge devices' }
     },
     {
       id: 'robotics', label: 'Robotics', kind: 'domain', group: 'professional', tx: 765, ty: 405, radius: 32,
-      description: 'Current exploration of embodied intelligence, robotics, and systems that learn how the world behaves.',
+      description: 'What I\'m working on now: robots, and models that learn how the physical world behaves.',
       meta: { Focus: 'Embodied intelligence', Direction: 'World models' }
     },
     {
       id: 'neuro-ai', label: 'Neuro-AI', kind: 'domain', group: 'research', tx: 270, ty: 430, radius: 31,
-      description: 'Cross-modal learning between fMRI brain activations, attention, and speech representations.',
+      description: 'Linking fMRI brain activity with attention and with how models represent speech.',
       meta: { Signals: '3D fMRI', Models: 'CNNs · Transformers' }
     },
     {
       id: 'software', label: 'Software', kind: 'domain', group: 'build', tx: 515, ty: 505, radius: 31,
-      description: 'Interactive scientific tools, local AI applications, systems coursework, games, and web software.',
+      description: 'Everything else I\'ve built: science tools, local AI apps, games, web apps and systems coursework.',
       meta: { Repositories: '23 original public repos', Range: 'Systems to interfaces' }
     },
     {
       id: 'smen', label: 'SMEN', kind: 'project', group: 'research', tx: 190, ty: 95, radius: 27,
-      description: 'A spectra-and-molecule encoder network for ranking and generating molecular structures from infrared spectra.',
+      description: 'A model that takes an infrared spectrum and ranks or generates the molecules that could have produced it.',
       meta: { Evidence: 'Peer-reviewed evaluation', Status: 'Digital Discovery, 2024' }, link: 'https://doi.org/10.1039/D4DD00135D'
     },
     {
       id: 'molgpt', label: 'MolGPT 2.0', kind: 'project', group: 'research', tx: 75, ty: 180, radius: 30,
-      description: 'Multi-objective molecular generation using transformer encoder-decoder models and direct preference optimization.',
+      description: 'Generates molecules that meet several goals at once, using an encoder-decoder transformer tuned with direct preference optimization.',
       meta: { Evaluation: 'Checkpoint-dependent', Role: 'Initial codebase author' }, link: 'https://github.com/devalab/MolGPT2.0'
     },
     {
       id: 'bias-study', label: 'Bias study', kind: 'project', group: 'research', tx: 85, ty: 330, radius: 29,
-      description: 'Research exposing latent biases in popular datasets and models for binding-affinity prediction.',
+      description: 'Found hidden biases in the popular datasets and models used to predict binding affinity.',
       meta: { Models: 'DeepDTA · GraphDTA · more', Status: 'Peer reviewed' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
     },
     {
       id: 'beds', label: 'BEDS', kind: 'project', group: 'research', tx: 150, ty: 485, radius: 26,
-      description: 'Brain Encoding and Decoding of Speech: a private research implementation with a public project summary.',
+      description: 'Brain Encoding and Decoding of Speech. The research code is private; the repo has a public summary.',
       meta: { Input: 'fMRI activations', Output: 'Speech representations' }, link: 'https://github.com/kganeshchandan/BEDS'
     },
     {
       id: 'jepa', label: 'JEPA GOAT', kind: 'project', group: 'build', tx: 800, ty: 535, radius: 29,
-      description: 'A lightweight environment for collecting actions, frames, and object dynamics for future JEPA experiments.',
+      description: 'A small game environment that records frames, actions and object movement, to use later for JEPA experiments.',
       meta: { Area: 'World models', Stack: 'Python · Pygame' }, link: 'https://github.com/kganeshchandan/jepa-goat'
     },
     {
       id: 'manga', label: 'Manga AI', kind: 'project', group: 'build', tx: 610, ty: 575, radius: 28,
-      description: 'A local-first manga colorizer combining a browser extension, FastAPI service, and local GAN inference.',
+      description: 'Colors manga in the browser. A Chrome extension sends pages to a FastAPI service that runs a GAN on your own machine.',
       meta: { Privacy: 'Local-first', Stack: 'JavaScript · Python' }, link: 'https://github.com/kganeshchandan/manga-colorizer'
     },
     {
       id: 'molvis', label: 'MolVis', kind: 'project', group: 'build', tx: 455, ty: 590, radius: 27,
-      description: 'An immersive Apple Vision Pro application for exploring and manipulating molecular structures.',
+      description: 'An Apple Vision Pro app for looking at molecules in 3D and moving them around.',
       meta: { Platform: 'visionOS', Stack: 'RealityKit · SwiftUI' }, link: 'https://github.com/kganeshchandan/MolVis'
     },
     {
       id: 'paper-spectra', label: 'Digital Discovery', kind: 'paper', group: 'publication', tx: 250, ty: 35, radius: 25,
-      description: 'Spectra to structure: contrastive learning framework for library ranking and molecular generation.',
+      description: 'Spectra to structure: contrastive learning to rank candidate molecules and generate new ones from spectra.',
       meta: { Published: '2024', Journal: 'Digital Discovery' }, link: 'https://doi.org/10.1039/D4DD00135D'
     },
     {
       id: 'paper-generative', label: 'GenAI review', kind: 'paper', group: 'publication', tx: 65, ty: 70, radius: 25,
-      description: 'A peer-reviewed review of generative artificial intelligence for small-molecule drug design.',
+      description: 'A review of generative AI methods for designing small-molecule drugs.',
       meta: { Published: '2024', Journal: 'Current Opinion in Biotechnology' }, link: 'https://doi.org/10.1016/j.copbio.2024.103175'
     },
     {
       id: 'paper-bias', label: 'ACS Omega', kind: 'paper', group: 'publication', tx: 45, ty: 420, radius: 25,
-      description: 'Peer-reviewed study of latent biases in binding-affinity models using popular datasets.',
+      description: 'The published bias study: binding-affinity models and the datasets they are trained on.',
       meta: { Published: '2023', Journal: 'ACS Omega' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
     }
   ];
