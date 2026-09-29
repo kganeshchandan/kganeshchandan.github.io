@@ -33,9 +33,16 @@
       </div>
     </header>
 
-    <nav class="year-nav" aria-label="Timeline years">
-      <span>Jump to</span><a href="#year-2019">2019</a><a href="#year-2021">2021</a><a href="#year-2022">2022</a><a href="#year-2023">2023</a><a href="#year-2024">2024</a><a href="#year-2026">2026</a>
-    </nav>
+
+    <div class="timeline-body">
+      <aside class="year-dial" data-year-dial aria-label="Timeline position">
+        <p class="eyebrow">Now reading</p>
+        <p class="dial-year" data-dial-year>2019</p>
+        <p class="dial-caption" data-dial-caption>Learning in public.</p>
+        <p class="dial-count" data-dial-count>02 repositories</p>
+        <ol class="dial-months" data-dial-months aria-hidden="true"><li>J</li><li>F</li><li>M</li><li>A</li><li>M</li><li>J</li><li>J</li><li>A</li><li>S</li><li class="has-repo is-current">O</li><li>N</li><li>D</li></ol>
+        <nav class="dial-years" aria-label="Timeline years"><a href="#year-2019" aria-current="true">2019</a><a href="#year-2021">2021</a><a href="#year-2022">2022</a><a href="#year-2023">2023</a><a href="#year-2024">2024</a><a href="#year-2026">2026</a></nav>
+      </aside>
 
     <div class="repo-timeline">
       <section class="timeline-year-section" id="year-2019" data-timeline-year>
@@ -102,6 +109,7 @@
         </div>
       </section>
     </div>
+    </div>
 
     <aside class="timeline-note">
       <p class="eyebrow">Beyond the personal namespace</p>
@@ -111,6 +119,6 @@
     </aside>
   </main>
 
-  <footer class="site-footer"><span>28 account-owned public repositories</span><span>2019—2026</span></footer>
+  <footer class="site-footer"><span>Ganesh Chandan · India · <span data-year></span></span><nav class="footer-links" aria-label="Elsewhere"><a href="https://github.com/kganeshchandan" target="_blank" rel="noreferrer">GitHub</a><a href="https://orcid.org/0000-0002-4469-1857" target="_blank" rel="noreferrer">ORCID</a><a href="mailto:k.ganesh.chandan@gmail.com">Email</a></nav></footer>
 </body>
 </html>

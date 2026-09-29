@@ -227,10 +227,20 @@ if (graph) {
   nodes.forEach((node) => {
     node.baseTx = node.tx;
     node.baseTy = node.ty;
-    const padding = mobileView ? 58 : 42;
-    node.tx = padding + (node.baseTx / BASE_WIDTH) * (width - padding * 2);
-    node.ty = padding + (node.baseTy / BASE_HEIGHT) * (height - padding * 2);
   });
+  // Fit the authored layout's own extent (not the 900×640 frame) so it sits centred in the canvas.
+  const layoutBounds = {
+    minX: Math.min(...nodes.map((node) => node.baseTx - node.radius)),
+    maxX: Math.max(...nodes.map((node) => node.baseTx + node.radius)),
+    minY: Math.min(...nodes.map((node) => node.baseTy - node.radius)),
+    maxY: Math.max(...nodes.map((node) => node.baseTy + node.radius))
+  };
+  const placeNode = (node) => {
+    const padding = mobileView ? 52 : 34;
+    node.tx = padding + ((node.baseTx - layoutBounds.minX) / (layoutBounds.maxX - layoutBounds.minX)) * (width - padding * 2);
+    node.ty = padding + ((node.baseTy - layoutBounds.minY) / (layoutBounds.maxY - layoutBounds.minY)) * (height - padding * 2);
+  };
+  nodes.forEach(placeNode);
 
   let defaultView = { x: 0, y: 0, width, height };
   let currentView = { ...defaultView };
@@ -258,6 +268,14 @@ if (graph) {
     graph.setAttribute('viewBox', `${currentView.x} ${currentView.y} ${currentView.width} ${currentView.height}`);
   };
   setView(currentView);
+
+  // Shrink a label until its longest line fits inside the circle (DM Mono glyphs are ~.6em wide).
+  const sizeLabel = (node) => {
+    const longest = Math.max(...node.labelLines.map((line) => line.length));
+    const baseSize = mobileView ? 17 : 9;
+    const fitSize = (node.renderRadius * 2 * .8) / (longest * .6);
+    node.text.style.fontSize = `${Math.min(baseSize, fitSize).toFixed(2)}px`;
+  };
 
   const makeSvg = (name, attributes = {}) => {
     const element = document.createElementNS(SVG_NS, name);
@@ -290,19 +308,22 @@ if (graph) {
     visual.append(circle);
 
     const words = node.label.split(' ');
-    const text = makeSvg('text', { class: `node-label${node.label.length > 12 ? ' is-small' : ''}` });
+    const text = makeSvg('text', { class: 'node-label' });
     if (words.length > 1) {
       const midpoint = Math.ceil(words.length / 2);
-      [words.slice(0, midpoint), words.slice(midpoint)].forEach((line, lineIndex) => {
-        if (!line.length) return;
-        const tspan = makeSvg('tspan', { x: '0', dy: lineIndex === 0 ? '-1' : '12' });
-        tspan.textContent = line.join(' ');
+      node.labelLines = [words.slice(0, midpoint), words.slice(midpoint)].filter((line) => line.length).map((line) => line.join(' '));
+      node.labelLines.forEach((line, lineIndex) => {
+        const tspan = makeSvg('tspan', { x: '0', dy: lineIndex === 0 ? '-.2em' : '1.1em' });
+        tspan.textContent = line;
         text.append(tspan);
       });
     } else {
-      text.setAttribute('dy', '3');
+      node.labelLines = [node.label];
+      text.setAttribute('dy', '.35em');
       text.textContent = node.label;
     }
+    node.text = text;
+    sizeLabel(node);
     visual.append(text);
     group.append(visual);
     nodeLayer.append(group);
@@ -339,13 +360,17 @@ if (graph) {
     });
   };
 
+  const EDGE_GAP = 14;
+  const clampX = (node, x) => Math.max(node.renderRadius + EDGE_GAP, Math.min(width - node.renderRadius - EDGE_GAP, x));
+  const clampY = (node, y) => Math.max(node.renderRadius + EDGE_GAP, Math.min(height - node.renderRadius - EDGE_GAP, y));
+
   const simulate = () => {
     const activeNodes = nodes.filter((node) => node.spawned);
     activeNodes.forEach((node) => {
       node.vx *= .88;
       node.vy *= .88;
-      node.vx += (node.tx - node.x) * .0006;
-      node.vy += (node.ty - node.y) * .0006;
+      node.vx += (node.tx - node.x) * .002;
+      node.vy += (node.ty - node.y) * .002;
     });
 
     for (let i = 0; i < activeNodes.length; i += 1) {
@@ -402,8 +427,8 @@ if (graph) {
         node.vy = 0;
         return;
       }
-      node.x = Math.max(node.renderRadius, Math.min(width - node.renderRadius, node.x + node.vx));
-      node.y = Math.max(node.renderRadius, Math.min(height - node.renderRadius, node.y + node.vy));
+      node.x = clampX(node, node.x + node.vx);
+      node.y = clampY(node, node.y + node.vy);
       motion += Math.abs(node.vx) + Math.abs(node.vy);
     });
     render();
@@ -567,28 +592,26 @@ if (graph) {
       pointerOffset = { x: node.x - point.x, y: node.y - point.y };
       node.element.setPointerCapture(event.pointerId);
       graph.classList.add('is-dragging');
-      wakeSimulation(.8);
     });
     node.element.addEventListener('pointermove', (event) => {
       if (dragging !== node) return;
       const point = clientToGraph(event);
       if (Math.hypot(point.x + pointerOffset.x - node.x, point.y + pointerOffset.y - node.y) > 2) node.moved = true;
-      node.x = Math.max(node.renderRadius, Math.min(width - node.renderRadius, point.x + pointerOffset.x));
-      node.y = Math.max(node.renderRadius, Math.min(height - node.renderRadius, point.y + pointerOffset.y));
+      node.x = clampX(node, point.x + pointerOffset.x);
+      node.y = clampY(node, point.y + pointerOffset.y);
       wakeSimulation(1);
       render();
     });
     node.element.addEventListener('pointerup', () => {
       dragging = null;
       graph.classList.remove('is-dragging');
-      wakeSimulation(1);
+      if (node.moved) wakeSimulation(1);
       setTimeout(() => { node.moved = false; }, 0);
     });
     node.element.addEventListener('pointercancel', () => {
       dragging = null;
       node.moved = false;
       graph.classList.remove('is-dragging');
-      wakeSimulation(.8);
     });
   });
 
@@ -708,6 +731,20 @@ if (graph) {
     applyVisibility();
   });
 
+  const searchToggle = document.querySelector('[data-search-toggle]');
+  const toolbar = searchToggle?.closest('.atlas-toolbar');
+  const setSearchOpen = (open) => {
+    toolbar.classList.toggle('is-searching', open);
+    searchToggle.setAttribute('aria-expanded', String(open));
+    if (open) searchInput.focus();
+  };
+  searchToggle?.addEventListener('click', () => setSearchOpen(!toolbar.classList.contains('is-searching')));
+  searchInput?.addEventListener('blur', () => {
+    if (toolbar && !searchInput.value) setTimeout(() => {
+      if (!toolbar.contains(document.activeElement)) setSearchOpen(false);
+    }, 150);
+  });
+
   searchInput?.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown' && rankedResults.length) {
       event.preventDefault();
@@ -773,7 +810,7 @@ if (graph) {
       if (reducedMotion) return;
 
       const startTime = performance.now();
-      const duration = 900;
+      const duration = 700;
       const animate = (now) => {
         const elapsed = Math.min(1, (now - startTime) / duration);
         const eased = 1 - Math.pow(1 - elapsed, 3);
@@ -792,13 +829,13 @@ if (graph) {
         const node = nodeMap.get(id);
         const parent = parents[id] ? nodeMap.get(parents[id]) : null;
         growNode(node, parent);
-      }, reducedMotion ? 0 : index * 145);
+      }, reducedMotion ? 0 : index * 70);
     });
 
     window.setTimeout(() => {
       refreshLinkLengths();
       wakeSimulation(.75);
-    }, reducedMotion ? 0 : (order.length - 1) * 145 + 900);
+    }, reducedMotion ? 0 : (order.length - 1) * 70 + 700);
   };
 
   render();
@@ -817,12 +854,10 @@ if (graph) {
     width = nextLayout.width;
     height = nextLayout.height;
     mobileView = nextLayout.mobile;
-    const padding = mobileView ? 58 : 42;
     nodes.forEach((node) => {
       if (node.growthFrame) cancelAnimationFrame(node.growthFrame);
       node.growthFrame = null;
-      node.tx = padding + (node.baseTx / BASE_WIDTH) * (width - padding * 2);
-      node.ty = padding + (node.baseTy / BASE_HEIGHT) * (height - padding * 2);
+      placeNode(node);
       node.x = node.tx;
       node.y = node.ty;
       node.vx = 0;
@@ -830,6 +865,7 @@ if (graph) {
       node.progress = node.spawned ? 1 : 0;
       node.renderRadius = node.radius * (mobileView ? 1.45 : .9);
       node.circle.setAttribute('r', node.renderRadius);
+      sizeLabel(node);
     });
     refreshLinkLengths();
     defaultView = { x: 0, y: 0, width, height };
@@ -851,4 +887,69 @@ if (scrollProgress) {
   updateProgress();
   window.addEventListener('scroll', updateProgress, { passive: true });
   window.addEventListener('resize', updateProgress);
+}
+
+// Timeline year dial: follows the entry crossing 40% of the viewport, like a calendar turning over.
+const dial = document.querySelector('[data-year-dial]');
+if (dial) {
+  const track = document.querySelector('.repo-timeline');
+  const entries = [...track.querySelectorAll('.repo-entry')];
+  const yearEl = dial.querySelector('[data-dial-year]');
+  const captionEl = dial.querySelector('[data-dial-caption]');
+  const countEl = dial.querySelector('[data-dial-count]');
+  const monthCells = [...dial.querySelectorAll('[data-dial-months] li')];
+  const yearLinks = [...dial.querySelectorAll('.dial-years a')];
+  const monthOf = (entry) => new Date(entry.querySelector('time').dateTime).getUTCMonth();
+  let current = null;
+
+  const showEntry = (entry) => {
+    if (entry === current) return;
+    const section = entry.closest('[data-timeline-year]');
+    const previousSection = current?.closest('[data-timeline-year]');
+    current?.classList.remove('is-current');
+    entry.classList.add('is-current');
+    current = entry;
+
+    if (section !== previousSection) {
+      const header = section.querySelector('header');
+      yearEl.textContent = header.querySelector('p').textContent;
+      captionEl.textContent = header.querySelector('h2').textContent;
+      countEl.textContent = header.querySelector('span').textContent;
+      if (previousSection && !reducedMotionPage) {
+        yearEl.classList.remove('is-turning');
+        void yearEl.offsetWidth;
+        yearEl.classList.add('is-turning');
+      }
+      const months = new Set([...section.querySelectorAll('.repo-entry')].map(monthOf));
+      monthCells.forEach((cell, index) => cell.classList.toggle('has-repo', months.has(index)));
+      yearLinks.forEach((link) => {
+        if (link.hash === `#${section.id}`) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      });
+    }
+    const month = monthOf(entry);
+    monthCells.forEach((cell, index) => cell.classList.toggle('is-current', index === month));
+    const dotCentre = parseFloat(getComputedStyle(entry, '::before').top) + 5;
+    const dotY = entry.getBoundingClientRect().top - track.getBoundingClientRect().top + dotCentre;
+    track.style.setProperty('--rail-fill', `${Math.max(0, dotY)}px`);
+  };
+
+  let pending = false;
+  const updateDial = () => {
+    pending = false;
+    const line = window.innerHeight * .4;
+    let active = entries[0];
+    for (const entry of entries) {
+      if (entry.getBoundingClientRect().top <= line) active = entry;
+      else break;
+    }
+    showEntry(active);
+  };
+  const requestUpdate = () => {
+    if (!pending) { pending = true; requestAnimationFrame(updateDial); }
+  };
+  const reducedMotionPage = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  updateDial();
+  window.addEventListener('scroll', requestUpdate, { passive: true });
+  window.addEventListener('resize', requestUpdate);
 }
