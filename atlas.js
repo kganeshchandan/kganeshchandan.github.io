@@ -185,9 +185,9 @@
   ].map(([source, target]) => ({ source, target }));
 
   const CLUSTERS = [
-    { id: 'research', label: 'Research at IIIT Hyderabad', members: ['iiith', 'molecular-ai', 'multimodal', 'neuro-ai', 'smen', 'molgpt', 'bias-study', 'beds', 'paper-spectra', 'paper-generative', 'paper-bias'] },
-    { id: 'samsung', label: 'Samsung Research', members: ['samsung', 'biosensing', 'robotics'] },
-    { id: 'builds', label: 'Things I\'ve built', members: ['software', 'virtual-labs', 'molvis', 'manga', 'jepa'] }
+    { id: 'research', label: 'Research at IIIT Hyderabad', short: 'IIIT Hyderabad', members: ['iiith', 'molecular-ai', 'multimodal', 'neuro-ai', 'smen', 'molgpt', 'bias-study', 'beds', 'paper-spectra', 'paper-generative', 'paper-bias'] },
+    { id: 'samsung', label: 'Samsung Research', short: 'Samsung', members: ['samsung', 'biosensing', 'robotics'] },
+    { id: 'builds', label: 'Things I\'ve built', short: 'Builds', members: ['software', 'virtual-labs', 'molvis', 'manga', 'jepa'] }
   ];
 
   // Repositories that can fan out from a node: [repository name, short label, year created].
@@ -292,6 +292,52 @@
     maxY: Math.max(...nodes.map((node) => node.baseTy + node.radius))
   };
   const EDGE_GAP = 14;
+  // Buttons that float over the canvas (layout/tour toggle, zoom controls), in default-view units,
+  // so nodes can be kept out from under them.
+  let keepOut = [];
+  let unitsPerPixel = 1;
+  const measureOverlays = () => {
+    const svgRect = graph.getBoundingClientRect();
+    if (!svgRect.width || !svgRect.height) return;
+    const scale = Math.min(svgRect.width / width, svgRect.height / height);
+    const offsetX = svgRect.left + (svgRect.width - width * scale) / 2;
+    const offsetY = svgRect.top + (svgRect.height - height * scale) / 2;
+    unitsPerPixel = 1 / scale;
+    graph.style.setProperty('--unit', unitsPerPixel.toFixed(3));
+    keepOut = [...graphStage.querySelectorAll('.graph-modes, .graph-controls')]
+      .map((element) => element.getBoundingClientRect())
+      .filter((rect) => rect.width && rect.height)
+      .map((rect) => ({
+        left: (rect.left - offsetX) / scale - 6,
+        right: (rect.right - offsetX) / scale + 6,
+        top: (rect.top - offsetY) / scale - 6,
+        bottom: (rect.bottom - offsetY) / scale + 6
+      }));
+  };
+  // Where a circle would have to move to clear every overlay (its own position if already clear).
+  const clearOfOverlays = (x, y, radius) => {
+    let point = { x, y };
+    keepOut.forEach((box) => {
+      const nearestX = Math.max(box.left, Math.min(box.right, point.x));
+      const nearestY = Math.max(box.top, Math.min(box.bottom, point.y));
+      const distance = Math.hypot(point.x - nearestX, point.y - nearestY);
+      if (distance >= radius) return;
+      if (distance > .01) {
+        const push = radius - distance;
+        point = { x: point.x + ((point.x - nearestX) / distance) * push, y: point.y + ((point.y - nearestY) / distance) * push };
+        return;
+      }
+      // Centre inside the box: leave by the nearest side that stays on the canvas.
+      const exits = [
+        { x: point.x, y: box.bottom + radius, cost: box.bottom - point.y },
+        { x: point.x, y: box.top - radius, cost: point.y - box.top },
+        { x: box.right + radius, y: point.y, cost: box.right - point.x },
+        { x: box.left - radius, y: point.y, cost: point.x - box.left }
+      ].filter((exit) => exit.x > radius && exit.x < width - radius && exit.y > radius && exit.y < height - radius);
+      if (exits.length) point = exits.reduce((best, exit) => (exit.cost < best.cost ? exit : best));
+    });
+    return point;
+  };
   const clampX = (node, x) => Math.max(node.renderRadius + EDGE_GAP, Math.min(width - node.renderRadius - EDGE_GAP, x));
   const clampY = (node, y) => Math.max(node.renderRadius + EDGE_GAP, Math.min(height - node.renderRadius - EDGE_GAP, y));
 
@@ -307,8 +353,11 @@
     const padding = mobileView ? 52 : 34;
     const top = mobileView ? 130 : 66;
     const bottom = mobileView ? 150 : 44;
-    node.tx = padding + ((node.baseTx - layoutBounds.minX) / (layoutBounds.maxX - layoutBounds.minX)) * (width - padding * 2);
-    node.ty = top + ((node.baseTy - layoutBounds.minY) / (layoutBounds.maxY - layoutBounds.minY)) * (height - top - bottom);
+    const x = padding + ((node.baseTx - layoutBounds.minX) / (layoutBounds.maxX - layoutBounds.minX)) * (width - padding * 2);
+    const y = top + ((node.baseTy - layoutBounds.minY) / (layoutBounds.maxY - layoutBounds.minY)) * (height - top - bottom);
+    const clear = clearOfOverlays(x, y, radiusFor(node) + 8);
+    node.tx = clear.x;
+    node.ty = clear.y;
   };
 
   // Timeline layout: years run along the long side of the canvas, one lane per kind of node.
@@ -316,6 +365,8 @@
   const LAST_YEAR = 2026;
   const LANES = [['place', 'Institutions'], ['domain', 'Research areas'], ['project', 'Projects'], ['paper', 'Papers'], ['repo', 'Repositories']];
   const LABEL_STRIP = 16;
+  // Portrait phones stack the lanes as narrow columns, so their headings use shorter names.
+  const SHORT_LANES = { Institutions: 'Places', 'Research areas': 'Research', Repositories: 'Repos' };
   // Years run along the long side of the canvas: left to right on wide screens, top to bottom on
   // portrait phones. `a` is the position along the years, `c` the position across the lanes.
   const timelineGeometry = () => {
@@ -384,10 +435,51 @@
           );
           node.tx = point.x;
           node.ty = point.y;
+          node.slot = { across: [laneStart + geo.strip, laneStart + geo.laneSize], along: geo.yearAt(year) };
         });
       });
     });
+    separateTimeline(geo);
     return geo;
+  };
+  // Crowded year cells can still leave circles touching, so nudge overlapping pairs apart while
+  // keeping every node inside its lane and near its year.
+  const separateTimeline = (geo) => {
+    const placed = nodes.filter((node) => node.slot);
+    const axis = geo.vertical ? { along: 'ty', across: 'tx' } : { along: 'tx', across: 'ty' };
+    for (let pass = 0; pass < 120; pass += 1) {
+      let moved = false;
+      for (let i = 0; i < placed.length; i += 1) {
+        for (let j = i + 1; j < placed.length; j += 1) {
+          const left = placed[i];
+          const right = placed[j];
+          let dx = right.tx - left.tx;
+          let dy = right.ty - left.ty;
+          let distance = Math.hypot(dx, dy);
+          const minimum = left.renderRadius + right.renderRadius + 5;
+          if (distance >= minimum) continue;
+          if (distance < .01) {
+            dx = 1;
+            dy = 1;
+            distance = Math.SQRT2;
+          }
+          const push = (minimum - distance) / 2 + .1;
+          left.tx -= (dx / distance) * push;
+          left.ty -= (dy / distance) * push;
+          right.tx += (dx / distance) * push;
+          right.ty += (dy / distance) * push;
+          moved = true;
+        }
+      }
+      placed.forEach((node) => {
+        const [low, high] = node.slot.across;
+        const r = node.renderRadius + 2;
+        node[axis.across] = Math.max(low + r, Math.min(high - r, node[axis.across]));
+        const reach = geo.column * .65;
+        node[axis.along] = Math.max(node.slot.along - reach, Math.min(node.slot.along + reach, node[axis.along]));
+      });
+      if (!moved) break;
+    }
   };
 
   const drawAxis = () => {
@@ -404,7 +496,7 @@
       const text = makeSvg('text', geo.vertical
         ? { x: start + geo.laneSize / 2, y: geo.along.start - 6, 'text-anchor': 'middle' }
         : { x: geo.along.start + 6, y: start + 11 });
-      text.textContent = label;
+      text.textContent = geo.vertical ? SHORT_LANES[label] || label : label;
       group.append(text);
       axisLayer.append(group);
     });
@@ -431,6 +523,7 @@
     });
   };
   const applyLayoutTargets = () => {
+    nodes.forEach((node) => { node.slot = null; });
     if (layoutMode === 'timeline') placeTimeline();
     else {
       nodes.filter((node) => !node.parentId).forEach(placeNetwork);
@@ -476,6 +569,8 @@
     graph.setAttribute('viewBox', `${currentView.x} ${currentView.y} ${currentView.width} ${currentView.height}`);
     graph.classList.toggle('is-zoomed', currentView.width < defaultView.width * .62);
     graph.style.setProperty('--zoom', (currentView.width / defaultView.width).toFixed(3));
+    graphStage.classList.toggle('is-moved', Math.abs(currentView.width - defaultView.width) > 4
+      || Math.abs(currentView.x - defaultView.x) > 4 || Math.abs(currentView.y - defaultView.y) > 4);
     updateMinimapView();
   };
 
@@ -502,16 +597,30 @@
     viewFrame = requestAnimationFrame(step);
   };
 
-  // A view that frames the given nodes (with their radius and some breathing room).
-  const viewFor = (list, padding = 60) => {
+  // Share of the stage height hidden under the layout and tour buttons along its top edge.
+  const topInset = () => {
+    const stageRect = graphStage.getBoundingClientRect();
+    const modes = graphStage.querySelector('.graph-modes');
+    if (!modes || !stageRect.height) return 0;
+    return Math.max(0, Math.min(.3, (modes.getBoundingClientRect().bottom - stageRect.top + 6) / stageRect.height));
+  };
+  // A view that frames the given nodes (with their radius and some breathing room) in the part of
+  // the stage that isn't covered: below the top buttons and above any bar along the bottom.
+  const viewFor = (list, padding = 60, bottomInset = 0) => {
     if (!list.length) return { ...defaultView };
-    const minX = Math.min(...list.map((node) => node.tx - node.renderRadius)) - padding;
-    const maxX = Math.max(...list.map((node) => node.tx + node.renderRadius)) + padding;
-    const minY = Math.min(...list.map((node) => node.ty - node.renderRadius)) - padding;
-    const maxY = Math.max(...list.map((node) => node.ty + node.renderRadius)) + padding;
-    const viewWidth = Math.min(defaultView.width, Math.max(maxX - minX, (maxY - minY) / aspectRatio(), 300));
+    // Settled nodes are framed where they actually are; moving ones where they are heading.
+    const px = (node) => (node.spawned && !node.tweening && layoutMode === 'network' ? node.x : node.tx);
+    const py = (node) => (node.spawned && !node.tweening && layoutMode === 'network' ? node.y : node.ty);
+    const minX = Math.min(...list.map((node) => px(node) - node.renderRadius)) - padding;
+    const maxX = Math.max(...list.map((node) => px(node) + node.renderRadius)) + padding;
+    const minY = Math.min(...list.map((node) => py(node) - node.renderRadius)) - padding * .6;
+    const maxY = Math.max(...list.map((node) => py(node) + node.renderRadius)) + padding * .6;
+    const top = topInset();
+    const free = Math.max(.35, 1 - top - bottomInset);
+    const viewWidth = Math.min(defaultView.width, Math.max(maxX - minX, (maxY - minY) / free / aspectRatio(), 300));
     const viewHeight = viewWidth * aspectRatio();
-    return { x: (minX + maxX) / 2 - viewWidth / 2, y: (minY + maxY) / 2 - viewHeight / 2, width: viewWidth, height: viewHeight };
+    const y = minY - viewHeight * top - (viewHeight * free - (maxY - minY)) / 2;
+    return { x: (minX + maxX) / 2 - viewWidth / 2, y, width: viewWidth, height: viewHeight };
   };
 
   const zoomAt = (factor, point = { x: currentView.x + currentView.width / 2, y: currentView.y + currentView.height / 2 }) => {
@@ -698,6 +807,7 @@
     && (hull.members.includes(node.id) || (node.parentId && hull.members.includes(node.parentId))));
   const drawHulls = () => {
     if (layoutMode !== 'network') return;
+    const takenLabels = [];
     hulls.forEach((hull) => {
       const members = clusterMembers(hull);
       hull.group.classList.toggle('is-empty', members.length === 0);
@@ -712,11 +822,52 @@
       });
       const outline = convexHull(points);
       hull.shape.setAttribute('d', smoothClosedPath(outline));
+      // The label sits just above the region, unless that runs off the canvas or into a node or a
+      // button, in which case it tries just below the region, then off to either side of the top.
+      const cluster = CLUSTERS.find((item) => item.id === hull.group.dataset.cluster);
+      const text = mobileView ? cluster.short : cluster.label;
+      if (hull.label.textContent !== text) hull.label.textContent = text;
+      const font = (mobileView ? 9 : 11) * unitsPerPixel * (currentView.width / defaultView.width);
+      const half = hull.label.textContent.length * font * .34;
       const top = outline.reduce((best, point) => (point.y < best.y ? point : best), outline[0]);
-      const anchor = { x: top.x, y: Math.max(14, top.y - 6) };
-      const labelHalf = hull.label.textContent.length * 2.6;
-      hull.label.setAttribute('x', Math.max(labelHalf + 6, Math.min(width - labelHalf - 6, anchor.x)).toFixed(1));
-      hull.label.setAttribute('y', Math.min(height - 6, anchor.y).toFixed(1));
+      const bottom = outline.reduce((best, point) => (point.y > best.y ? point : best), outline[0]);
+      const fits = (spot) => {
+        const box = { left: spot.x - half - 4, right: spot.x + half + 4, top: spot.y - font, bottom: spot.y + 3 };
+        if (box.top < 4 || box.bottom > height - 4) return false;
+        const hitsNode = nodes.some((node) => node.spawned && !node.element.classList.contains('is-filtered')
+          && node.x + node.renderRadius > box.left && node.x - node.renderRadius < box.right
+          && node.y + node.renderRadius > box.top && node.y - node.renderRadius < box.bottom);
+        const overlaps = (zone) => zone.right > box.left && zone.left < box.right && zone.bottom > box.top && zone.top < box.bottom;
+        return !hitsNode && !keepOut.some(overlaps) && !takenLabels.some(overlaps);
+      };
+      const clampSpot = (spot) => ({ x: Math.max(half + 6, Math.min(width - half - 6, spot.x)), y: spot.y });
+      const candidates = [
+        { x: top.x, y: top.y - 6 },
+        { x: top.x - half, y: top.y - 6 },
+        { x: top.x + half, y: top.y - 6 },
+        { x: bottom.x, y: bottom.y + font + 2 },
+        { x: bottom.x - half, y: bottom.y + font + 2 },
+        { x: bottom.x + half, y: bottom.y + font + 2 },
+        { x: top.x - half * 1.4, y: top.y + font * 1.5 },
+        { x: top.x + half * 1.4, y: top.y + font * 1.5 },
+        { x: bottom.x, y: bottom.y - font }
+      ].map(clampSpot);
+      // Last resort: any clear gap inside the region, scanning down from the top.
+      const inside = () => {
+        const xs = outline.map((point) => point.x);
+        const centre = (Math.min(...xs) + Math.max(...xs)) / 2;
+        for (let y = top.y + font * 2; y < bottom.y - font; y += font) {
+          const found = [centre, centre - half, centre + half].map((x) => clampSpot({ x, y })).find(fits);
+          if (found) return found;
+        }
+        return null;
+      };
+      const spot = candidates.find(fits) || inside();
+      hull.label.classList.toggle('is-hidden', !spot);
+      if (!spot) return;
+      takenLabels.push({ left: spot.x - half - 6, right: spot.x + half + 6, top: spot.y - font - 4, bottom: spot.y + 6 });
+      hull.label.setAttribute('x', spot.x.toFixed(1));
+      hull.label.setAttribute('y', spot.y.toFixed(1));
     });
   };
 
@@ -833,6 +984,15 @@
       }
       node.x = clampX(node, node.x + node.vx);
       node.y = clampY(node, node.y + node.vy);
+      if (!timeline && keepOut.length) {
+        const clear = clearOfOverlays(node.x, node.y, node.renderRadius + 6);
+        if (clear.x !== node.x || clear.y !== node.y) {
+          node.vx += (clear.x - node.x) * .08;
+          node.vy += (clear.y - node.y) * .08;
+          node.x += (clear.x - node.x) * .25;
+          node.y += (clear.y - node.y) * .25;
+        }
+      }
       motion += Math.abs(node.vx) + Math.abs(node.vy);
     });
     render();
@@ -938,9 +1098,12 @@
     const preview = !focus && !searchTerm ? previewIds : null;
     const legend = !focus && legendKind;
 
+    // Under a filter, nodes kept only to show where the matches connect sit a step back.
+    const primary = (node) => activeFilter === 'all' || (node.parentId ? nodeMap.get(node.parentId).group : node.group) === activeFilter;
     nodes.forEach((node) => {
       const filtered = !matching.has(node.id);
       node.element.classList.toggle('is-filtered', filtered);
+      node.element.classList.toggle('is-context', Boolean(!filtered && !focus && !primary(node)));
       node.element.classList.toggle('is-muted', Boolean(!filtered && focus && !focus.has(node.id)));
       node.element.classList.toggle('is-match', Boolean(searchTerm && !filtered));
       node.element.classList.toggle('is-selected', node.id === selectedId);
@@ -964,7 +1127,8 @@
     graph.classList.toggle('has-focus', Boolean(focus));
     if (resultCount) {
       const label = matching.size === 1 ? 'node' : 'nodes';
-      resultCount.textContent = `${matching.size} ${label} shown · ${links.length} relationships`;
+      const shownLinks = links.filter((link) => matching.has(link.source) && matching.has(link.target)).length;
+      resultCount.textContent = `${matching.size} ${label} shown · ${shownLinks} ${shownLinks === 1 ? 'relationship' : 'relationships'}`;
     }
     const expanded = nodes.some((node) => node.kind === 'repo');
     document.querySelector('[data-legend="repo"]')?.toggleAttribute('hidden', !expanded);
@@ -1068,10 +1232,11 @@
       return;
     }
     const dockedRight = box.left > stageRect.width * .35;
+    const clearTop = topInset() * stageRect.height;
     glideView({
       ...view,
       x: view.x + (dockedRight ? (x - box.left / 2) / scale : 0),
-      y: view.y + (dockedRight ? 0 : (y - box.top / 2) / scale)
+      y: view.y + (dockedRight ? 0 : (y - (clearTop + box.top) / 2) / scale)
     });
   };
 
@@ -1315,11 +1480,10 @@
       const node = nodeMap.get(id);
       ripple(node);
       const related = [...neighbours(id)].map((item) => nodeMap.get(item));
-      const view = viewFor([node, ...related], mobileView ? 90 : 80);
       // Frame the step in the space above the caption bar rather than behind it.
       const stageHeight = graphStage.getBoundingClientRect().height || 1;
       const covered = (tourBar.offsetHeight + 24) / stageHeight;
-      glideView({ ...view, y: view.y + view.height * covered * .5 }, 900);
+      glideView(viewFor([node, ...related], mobileView ? 90 : 80, covered), 900);
     } else glideView({ ...defaultView }, 900);
     // Restart the progress bar for this step.
     tourProgress.style.transition = 'none';
@@ -1549,6 +1713,7 @@
   }
 
   // ---------------------------------------------------------------- build the graph
+  measureOverlays();
   applyLayoutTargets();
   nodes.forEach(createNodeElement);
   // Web fonts arrive after first paint; refit the lettering once they are in.
@@ -1964,11 +2129,13 @@
   const graphResizeObserver = new ResizeObserver(() => {
     const nextLayout = measureGraph();
     if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) {
+      measureOverlays();
       return;
     }
     width = nextLayout.width;
     height = nextLayout.height;
     mobileView = nextLayout.mobile;
+    measureOverlays();
     if (morphFrame) cancelAnimationFrame(morphFrame);
     morphFrame = null;
     nodes.forEach((node) => {
