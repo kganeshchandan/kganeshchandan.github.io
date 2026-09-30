@@ -246,12 +246,12 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .contact-main h1::before { bottom: -64px; background: var(--ink); }
 .contact-main h1::after { bottom: -54px; left: calc(36% + 6px); width: 52px; height: 66px; background: var(--paper); }
 .contact-intro { max-width: 560px; margin: 0 0 40px auto; }
-.email-link { margin-bottom: var(--panel-gap); padding: 26px 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 30px; background: var(--ink); color: var(--paper); text-decoration: none; transition: transform .2s var(--pop), box-shadow .2s var(--pop); }
+.email-link { padding: 26px 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px 30px; background: var(--ink); color: var(--paper); text-decoration: none; transition: transform .2s var(--pop), box-shadow .2s var(--pop); }
 .email-link span, .contact-links span { font: 700 12px var(--body); letter-spacing: .14em; text-transform: uppercase; }
 .email-link span { grid-column: 1 / -1; }
 .email-link strong { overflow-wrap: anywhere; font: 900 clamp(22px, 3.4vw, 50px)/1.1 var(--body); letter-spacing: -.02em; }
 .email-link i, .contact-links i { font: 400 26px/1 var(--display); font-style: normal; transition: transform .25s var(--pop); }
-.email-link:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.email-link:hover { box-shadow: 6px 6px 0 var(--ink); }
 .email-link:hover i, .contact-links a:hover i { transform: translate(6px, -6px) scale(1.2); }
 .contact-links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--panel-gap); }
 .contact-links a { min-height: 170px; padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; align-items: center; gap: 12px; border: var(--rule) solid var(--ink); background: var(--paper); text-decoration: none; transition: transform .2s var(--pop), background .15s, color .15s; }
@@ -284,8 +284,6 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .year-dial .eyebrow { margin-bottom: 16px; }
 /* Sized to the dial, not the window, so four digits always fit inside the panel */
 .dial-year { margin: 0; font: 400 min(112px, 28cqi)/.95 var(--display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; transform-origin: 30% 80%; }
-.dial-year.is-turning { animation: dial-turn .55s var(--pop); }
-@keyframes dial-turn { 0% { opacity: 0; transform: rotateX(80deg) translateY(-30%); } 60% { opacity: 1; transform: rotateX(-12deg) scale(1.04); } 100% { transform: none; } }
 .dial-caption { min-height: 3.45em; margin: 18px 0 8px; font: 800 var(--type-subheading)/1.15 var(--narration); text-wrap: balance; }
 .dial-count { margin: 0; font: 700 12px var(--body); letter-spacing: .12em; text-transform: uppercase; }
 /* Twelve months as a strip of tiny panels */
@@ -337,8 +335,53 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .timeline-note > p:not(.eyebrow) { max-width: 720px; font: 600 17px/1.7 var(--narration); }
 .timeline-note .text-link { display: inline-block; margin-top: 14px; }
 
+/* ---------- Motion and interaction ---------- */
+/* Page changes cross-fade; the header holds still between pages */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+.site-header { view-transition-name: site-header; transition: transform .35s var(--ease); }
+::view-transition-old(root) { animation: .2s ease-out both page-out; }
+::view-transition-new(root) { animation: .38s var(--ease) both page-in; }
+@keyframes page-out { to { opacity: 0; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
+
+/* Header steps aside while reading down; sticky pieces move up into its space */
+.header-hidden .site-header { transform: translateY(-100%); }
+.year-dial { transition: top .35s var(--ease); }
+.header-hidden .year-dial { top: 24px; }
+
+/* Scroll reveal: added by script only to content below the first screen */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .5s var(--ease) var(--reveal-delay, 0s), transform .6s var(--ease) var(--reveal-delay, 0s); }
+.reveal.is-revealed { opacity: 1; transform: none; }
+
+/* Atlas: hover or focus previews a node's neighbourhood; selected edges flow outward */
+.knowledge-graph.is-previewing .graph-node:not(.is-near):not(.is-muted) { opacity: .28; }
+.knowledge-graph.is-previewing .graph-edge.is-visible:not(.is-near) { opacity: .12; }
+.graph-edge.is-near { stroke-width: 2.6; }
+.graph-edge.is-related { stroke-dasharray: 8 5; animation: edge-flow .9s linear infinite; }
+.graph-edge.is-related.flows-in { animation-direction: reverse; }
+@keyframes edge-flow { to { stroke-dashoffset: -13; } }
+
+/* Timeline dial: changed digits roll in the direction of travel; marked months are clickable */
+.dial-year { overflow: hidden; }
+.dial-year span { display: inline-block; }
+.dial-year .is-rolling { animation: digit-down .5s var(--ease) calc(var(--i) * 45ms) both; }
+.dial-year .is-rolling-back { animation: digit-up .5s var(--ease) calc(var(--i) * 45ms) both; }
+@keyframes digit-down { from { opacity: 0; transform: translateY(-60%); } }
+@keyframes digit-up { from { opacity: 0; transform: translateY(60%); } }
+.dial-months li.has-repo { cursor: pointer; }
+.dial-months li.has-repo:hover { background: var(--ink); color: var(--paper); }
+
+/* Contact: copy the address without leaving the page */
+.email-row { position: relative; margin-bottom: var(--panel-gap); }
+.copy-email { position: absolute; top: 20px; right: 30px; padding: 5px 12px 4px; background: transparent; color: var(--paper); border: var(--rule-thin) solid var(--paper); cursor: pointer; font: 700 11px var(--body); letter-spacing: .14em; text-transform: uppercase; transition: background .15s, color .15s; }
+.copy-email:hover, .copy-email.is-done { background: var(--paper); color: var(--ink); }
+.copy-email:focus-visible { outline-color: var(--paper); }
+
 /* ---------- Tablet ---------- */
 @media (max-width: 1000px) {
+  .header-hidden .year-dial { top: 0; }
   :root { --page: calc(100% - 48px); --gutter: 24px; --inset: 40px; }
   .page-hero, .timeline-hero { grid-template-columns: minmax(0, 1fr); }
   .page-intro, .timeline-intro { max-width: 640px; margin-top: 0; }
@@ -368,6 +411,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
     --page-gap: 32px;
     --eyebrow-gap: 24px;
   }
+  .copy-email { top: 16px; right: 18px; }
   .wordmark > span:last-child { display: none; }
   .menu-toggle { min-width: 44px; min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 10px; border: var(--rule) solid var(--ink); background: var(--paper); font: 400 13px var(--display); }
   .menu-icon, .menu-icon::before { width: 16px; height: 3px; display: block; background: currentColor; content: ""; transition: transform .25s; }
