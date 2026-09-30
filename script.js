@@ -264,6 +264,8 @@ if (graph) {
   let defaultView = { x: 0, y: 0, width, height };
   let currentView = { ...defaultView };
   let selectedId = null;
+  let previewId = null;
+  let lastTap = { node: null, time: 0 };
   let lastFocusedNode = null;
   let activeFilter = 'all';
   let searchTerm = '';
@@ -384,7 +386,7 @@ if (graph) {
   document.fonts?.ready.then(() => nodes.forEach(sizeLabel));
 
   links.forEach((link) => {
-    const line = makeSvg('line', { class: 'graph-edge', pathLength: '1' });
+    const line = makeSvg('line', { class: 'graph-edge' });
     edgeLayer.append(line);
     link.element = line;
   });
@@ -583,7 +585,14 @@ if (graph) {
       const related = selectedId && (link.source === selectedId || link.target === selectedId);
       link.element.classList.toggle('is-muted', Boolean(filterMuted || (selectedId && !related)));
       link.element.classList.toggle('is-related', Boolean(related && !filterMuted));
+      // Selected edges animate outward from the selection, so reverse the ones that point into it.
+      link.element.classList.toggle('flows-in', Boolean(selectedId && link.target === selectedId));
     });
+
+    const previewRelated = previewId && !selectedId && !searchTerm ? relatedIds(previewId) : null;
+    graph.classList.toggle('is-previewing', Boolean(previewRelated));
+    nodes.forEach((node) => node.element.classList.toggle('is-near', Boolean(previewRelated?.has(node.id))));
+    links.forEach((link) => link.element.classList.toggle('is-near', Boolean(previewRelated && (link.source === previewId || link.target === previewId))));
 
   };
 
@@ -609,6 +618,12 @@ if (graph) {
       x: view.x + (dockedRight ? (x - box.left / 2) / scale : 0),
       y: view.y + (dockedRight ? 0 : (y - box.top / 2) / scale)
     });
+  };
+
+  const zoomToNode = (node) => {
+    const width = Math.max(300, currentView.width * .55);
+    const height = width * (defaultView.height / defaultView.width);
+    inspectNode(node, false, { x: node.x - width / 2, y: node.y - height / 2, width, height });
   };
 
   const inspectNode = (node, moveFocus = false, view = currentView) => {
@@ -669,7 +684,38 @@ if (graph) {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         inspectNode(node, true);
+        return;
       }
+      // Arrow keys move focus to the nearest reachable node in that direction.
+      const direction = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowDown: [0, 1], ArrowUp: [0, -1] }[event.key];
+      if (!direction) return;
+      event.preventDefault();
+      const [dx, dy] = direction;
+      let best = null;
+      let bestScore = Infinity;
+      nodes.forEach((other) => {
+        if (other === node || other.element.getAttribute('tabindex') !== '0') return;
+        const along = (other.x - node.x) * dx + (other.y - node.y) * dy;
+        if (along <= 0) return;
+        const across = Math.abs((other.x - node.x) * dy - (other.y - node.y) * dx);
+        const score = along + across * 2;
+        if (score < bestScore) { bestScore = score; best = other; }
+      });
+      best?.element.focus();
+    });
+    const preview = (on) => {
+      if (dragging) return;
+      if (on) previewId = node.id;
+      else if (previewId === node.id) previewId = null;
+      applyVisibility();
+    };
+    node.element.addEventListener('pointerenter', (event) => { if (event.pointerType === 'mouse') preview(true); });
+    node.element.addEventListener('pointerleave', () => preview(false));
+    node.element.addEventListener('focus', () => preview(true));
+    node.element.addEventListener('blur', () => preview(false));
+    node.element.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      zoomToNode(node);
     });
     node.element.addEventListener('pointerdown', (event) => {
       if (node.growthFrame) {
@@ -693,10 +739,16 @@ if (graph) {
       wakeSimulation(1);
       render();
     });
-    node.element.addEventListener('pointerup', () => {
+    node.element.addEventListener('pointerup', (event) => {
       dragging = null;
       graph.classList.remove('is-dragging');
       if (node.moved) wakeSimulation(1);
+      // Touch has no dblclick we can rely on, so detect a double tap on the same node.
+      if (!node.moved && event.pointerType !== 'mouse') {
+        const now = performance.now();
+        if (lastTap.node === node && now - lastTap.time < 320) zoomToNode(node);
+        lastTap = { node, time: now };
+      }
       setTimeout(() => { node.moved = false; }, 0);
     });
     node.element.addEventListener('pointercancel', () => {
@@ -706,14 +758,34 @@ if (graph) {
     });
   });
 
+  const touches = new Map();
+  let pinch = null;
   graph.addEventListener('pointerdown', (event) => {
     if (event.target.closest('.graph-node')) return;
     stopGlide();
+    touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (touches.size === 2) {
+      const [a, b] = [...touches.values()];
+      panning = null;
+      pinch = { distance: Math.hypot(a.x - b.x, a.y - b.y) || 1, view: { ...currentView }, centre: clientToGraph({ clientX: (a.x + b.x) / 2, clientY: (a.y + b.y) / 2 }) };
+      graph.setPointerCapture(event.pointerId);
+      return;
+    }
     panning = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, view: { ...currentView } };
     graph.setPointerCapture(event.pointerId);
     graph.classList.add('is-dragging');
   });
   graph.addEventListener('pointermove', (event) => {
+    if (touches.has(event.pointerId)) touches.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (pinch && touches.size === 2) {
+      const [a, b] = [...touches.values()];
+      const width = pinch.view.width * (pinch.distance / (Math.hypot(a.x - b.x, a.y - b.y) || 1));
+      const height = width * (defaultView.height / defaultView.width);
+      const xRatio = (pinch.centre.x - pinch.view.x) / pinch.view.width;
+      const yRatio = (pinch.centre.y - pinch.view.y) / pinch.view.height;
+      setView({ x: pinch.centre.x - xRatio * width, y: pinch.centre.y - yRatio * height, width, height });
+      return;
+    }
     if (!panning || panning.pointerId !== event.pointerId) return;
     const rect = graph.getBoundingClientRect();
     setView({
@@ -722,7 +794,9 @@ if (graph) {
       y: panning.view.y - (event.clientY - panning.clientY) * (panning.view.height / rect.height)
     });
   });
-  const stopPanning = () => {
+  const stopPanning = (event) => {
+    touches.delete(event.pointerId);
+    if (touches.size < 2) pinch = null;
     panning = null;
     graph.classList.remove('is-dragging');
   };
@@ -1035,14 +1109,18 @@ if (dial) {
 
     if (section !== previousSection) {
       const header = section.querySelector('header');
-      yearEl.textContent = header.querySelector('p').textContent;
+      const nextYear = header.querySelector('p').textContent;
+      const lastYear = yearEl.textContent;
+      const rollClass = Number(nextYear) < Number(lastYear) ? 'is-rolling-back' : 'is-rolling';
+      yearEl.replaceChildren(...[...nextYear].map((digit, index) => {
+        const span = document.createElement('span');
+        span.textContent = digit;
+        span.style.setProperty('--i', index);
+        if (previousSection && digit !== lastYear[index]) span.className = rollClass;
+        return span;
+      }));
       captionEl.textContent = header.querySelector('h2').textContent;
       countEl.textContent = header.querySelector('span').textContent;
-      if (previousSection && !reducedMotionPage) {
-        yearEl.classList.remove('is-turning');
-        void yearEl.offsetWidth;
-        yearEl.classList.add('is-turning');
-      }
       const months = new Set([...section.querySelectorAll('.repo-entry')].map(monthOf));
       monthCells.forEach((cell, index) => cell.classList.toggle('has-repo', months.has(index)));
       yearLinks.forEach((link) => {
@@ -1072,7 +1150,92 @@ if (dial) {
     if (!pending) { pending = true; requestAnimationFrame(updateDial); }
   };
   const reducedMotionPage = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Clicking a marked month jumps to that month's first repository in the year on show.
+  monthCells.forEach((cell, month) => cell.addEventListener('click', () => {
+    const section = current?.closest('[data-timeline-year]');
+    const target = section && [...section.querySelectorAll('.repo-entry')].find((entry) => monthOf(entry) === month);
+    if (!target) return;
+    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - window.innerHeight * .34, behavior: reducedMotionPage ? 'auto' : 'smooth' });
+  }));
   updateDial();
   window.addEventListener('scroll', requestUpdate, { passive: true });
   window.addEventListener('resize', requestUpdate);
 }
+
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// The header slides away while reading down a page and returns as soon as the reader scrolls back up.
+if (header && !document.body.classList.contains('graph-page')) {
+  const root = document.documentElement;
+  let lastY = window.scrollY;
+  let ticking = false;
+  const updateHeaderVisibility = () => {
+    ticking = false;
+    const y = window.scrollY;
+    const menuOpen = menuToggle?.getAttribute('aria-expanded') === 'true';
+    if (menuOpen || y < 160 || y < lastY - 4 || header.contains(document.activeElement)) root.classList.remove('header-hidden');
+    else if (y > lastY + 4) root.classList.add('header-hidden');
+    if (Math.abs(y - lastY) > 4) lastY = y;
+  };
+  window.addEventListener('scroll', () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(updateHeaderVisibility); }
+  }, { passive: true });
+  header.addEventListener('focusin', () => root.classList.remove('header-hidden'));
+}
+
+// Content below the first screen fades up as it arrives; anything already visible is left alone.
+if (!prefersReducedMotion && 'IntersectionObserver' in window) {
+  const revealTargets = [...document.querySelectorAll('.resume-facts article, .resume-section > header, .resume-rows article, .publication-rows li, .skills-grid p, .pdf-section, .timeline-year-section > header, .repo-entry, .timeline-note, .email-row, .contact-links a')]
+    .filter((element) => element.getBoundingClientRect().top > window.innerHeight * .92);
+  const revealer = new IntersectionObserver((entries) => {
+    entries.filter((entry) => entry.isIntersecting).forEach((entry, index) => {
+      entry.target.style.setProperty('--reveal-delay', `${Math.min(index, 5) * 70}ms`);
+      entry.target.classList.add('is-revealed');
+      revealer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  revealTargets.forEach((element) => {
+    element.classList.add('reveal');
+    revealer.observe(element);
+  });
+}
+
+// Headline figures count up once on load, keeping their zero padding.
+if (!prefersReducedMotion) {
+  document.querySelectorAll('.timeline-intro dd').forEach((figure) => {
+    const text = figure.textContent.trim();
+    const target = Number(text);
+    if (!Number.isFinite(target)) return;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / 900);
+      figure.textContent = String(Math.round(target * (1 - Math.pow(1 - t, 3)))).padStart(text.length, '0');
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    figure.textContent = '0'.padStart(text.length, '0');
+    requestAnimationFrame(tick);
+  });
+}
+
+// Copy the email address; if the clipboard is unavailable, select it so it can be copied by hand.
+document.querySelectorAll('[data-copy-email]').forEach((button) => {
+  const label = button.textContent;
+  button.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(button.dataset.copyEmail);
+      button.textContent = 'Copied';
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(document.querySelector('.email-link strong'));
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+      button.textContent = 'Selected';
+    }
+    button.classList.add('is-done');
+    clearTimeout(button.resetTimer);
+    button.resetTimer = setTimeout(() => {
+      button.textContent = label;
+      button.classList.remove('is-done');
+    }, 1800);
+  });
+});

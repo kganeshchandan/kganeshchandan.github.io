@@ -235,8 +235,6 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .year-dial { container-type: inline-size; position: sticky; top: calc(var(--header-h) + 24px); padding: 32px var(--inset) 28px; background: var(--paper-deep); border: 1px solid var(--line); }
 .year-dial .eyebrow { margin-bottom: 18px; color: var(--muted); }
 .dial-year { margin: 0; overflow: hidden; color: var(--signal); font-size: min(116px, 28cqi); font-weight: 620; line-height: .85; letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
-.dial-year.is-turning { animation: dial-turn .5s var(--ease); }
-@keyframes dial-turn { from { opacity: 0; transform: translateY(35%); } to { opacity: 1; transform: none; } }
 .dial-caption { min-height: 3.2em; margin: 22px 0 8px; font-size: var(--type-subheading); font-weight: 600; line-height: 1.05; letter-spacing: -.035em; text-wrap: balance; }
 .dial-count { margin: 0; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .dial-months { margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; list-style: none; }
@@ -286,7 +284,50 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 :focus-visible { outline: 2px solid var(--yellow); outline-offset: 5px; }
 .graph-page :focus-visible, .contact-page :focus-visible { outline-color: var(--yellow); }
 
+/* Motion and interaction */
+/* Page changes cross-fade; the header holds still between pages */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+.site-header { view-transition-name: site-header; transition: transform .35s var(--ease), border-color .25s, background .25s; }
+::view-transition-old(root) { animation: .2s ease-out both page-out; }
+::view-transition-new(root) { animation: .38s var(--ease) both page-in; }
+@keyframes page-out { to { opacity: 0; } }
+@keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
+
+/* Header steps aside while reading down; sticky pieces move up into its space */
+.header-hidden .site-header { transform: translateY(-100%); }
+.year-dial { transition: top .35s var(--ease); }
+.header-hidden .year-dial { top: 24px; }
+
+/* Scroll reveal: added by script only to content below the first screen */
+.reveal { opacity: 0; transform: translateY(18px); transition: opacity .5s var(--ease) var(--reveal-delay, 0s), transform .6s var(--ease) var(--reveal-delay, 0s); }
+.reveal.is-revealed { opacity: 1; transform: none; }
+
+/* Atlas: hover or focus previews a node's neighbourhood; selected edges flow outward */
+.knowledge-graph.is-previewing .graph-node:not(.is-near):not(.is-muted) { opacity: .3; }
+.knowledge-graph.is-previewing .graph-edge.is-visible:not(.is-near) { opacity: .15; }
+.graph-edge.is-near { stroke: var(--yellow); stroke-width: 2; }
+.graph-edge.is-related { stroke-dasharray: 8 5; animation: edge-flow .9s linear infinite; }
+.graph-edge.is-related.flows-in { animation-direction: reverse; }
+@keyframes edge-flow { to { stroke-dashoffset: -13; } }
+
+/* Timeline dial: changed digits roll in the direction of travel; marked months are clickable */
+.dial-year span { display: inline-block; }
+.dial-year .is-rolling { animation: digit-down .5s var(--ease) calc(var(--i) * 45ms) both; }
+.dial-year .is-rolling-back { animation: digit-up .5s var(--ease) calc(var(--i) * 45ms) both; }
+@keyframes digit-down { from { opacity: 0; transform: translateY(-60%); } }
+@keyframes digit-up { from { opacity: 0; transform: translateY(60%); } }
+.dial-months li.has-repo { cursor: pointer; }
+.dial-months li.has-repo:hover { color: var(--yellow); }
+
+/* Contact: copy the address without leaving the page */
+.email-row { position: relative; }
+.copy-email { position: absolute; top: 24px; right: 0; padding: 5px 10px; background: transparent; color: var(--muted); border: 1px solid var(--line); cursor: pointer; font: 11px var(--mono); text-transform: uppercase; transition: color .15s, border-color .15s; }
+.copy-email:hover, .copy-email.is-done { color: var(--yellow); border-color: var(--yellow); }
+
 @media (max-width: 1000px) {
+  .header-hidden .year-dial { top: 0; }
   :root { --page: calc(100% - 48px); --gutter: 24px; }
   .page-hero, .timeline-hero { grid-template-columns: minmax(0, 1fr); }
   .page-intro, .timeline-intro { max-width: 650px; }
