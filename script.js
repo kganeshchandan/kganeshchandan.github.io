@@ -22,9 +22,22 @@ menuToggle?.addEventListener('click', () => {
   nav?.classList.toggle('is-open', !open);
 });
 nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()));
+const menuIsOpen = () => menuToggle?.getAttribute('aria-expanded') === 'true';
 window.addEventListener('keydown', (event) => {
+  if (!menuIsOpen()) return;
   // Only claim Escape while the menu is actually open, so it never steals focus from other widgets.
-  if (event.key === 'Escape' && menuToggle?.getAttribute('aria-expanded') === 'true') closeMenu(true);
+  if (event.key === 'Escape') closeMenu(true);
+  // While the menu covers the page, Tab cycles between the toggle and the menu links.
+  if (event.key === 'Tab') {
+    const stops = [menuToggle, ...nav.querySelectorAll('a')];
+    const index = stops.indexOf(document.activeElement);
+    const next = event.shiftKey ? (index <= 0 ? stops.length - 1 : index - 1) : (index === stops.length - 1 ? 0 : index + 1);
+    event.preventDefault();
+    stops[next].focus();
+  }
+});
+document.addEventListener('pointerdown', (event) => {
+  if (menuIsOpen() && !header.contains(event.target)) closeMenu();
 });
 
 const graph = document.querySelector('[data-graph]');
@@ -215,7 +228,8 @@ if (graph) {
     const rect = graphStage.getBoundingClientRect();
     const aspect = Math.max(.35, rect.width / Math.max(rect.height, 1));
     if (aspect >= 1) {
-      return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 };
+      // Wide-but-short canvases (landscape phones) keep desktop-sized nodes so the layout has room.
+      return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 && aspect < 1.3 };
     }
     // Portrait canvases get a taller frame of the same shape, so the layout fills the stage
     // instead of sitting in a letterboxed band across the middle.
@@ -821,6 +835,15 @@ if (graph) {
     }
   };
 
+  const showNoResults = (query) => {
+    const message = document.createElement('p');
+    message.className = 'search-empty';
+    message.textContent = `No matches for “${query}”.`;
+    searchResults.replaceChildren(message);
+    searchResults.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
+  };
+
   const renderSearchResults = () => {
     searchResults.replaceChildren();
     rankedResults.forEach((item, index) => {
@@ -865,9 +888,9 @@ if (graph) {
     const near = scored.filter((item) => item.score < .7);
     rankedResults = (direct.length ? direct : near).slice(0, 5);
     searchMatches = new Set(rankedResults.map((item) => item.nodeId).filter(Boolean));
-    // Nothing close: every node dims and the count drops to zero rather than listing random items.
+    // Nothing close: every node dims and the list says so rather than showing random items.
     if (rankedResults.length) renderSearchResults();
-    else hideSearchResults();
+    else showNoResults(event.target.value.trim());
     applyVisibility();
   });
 
