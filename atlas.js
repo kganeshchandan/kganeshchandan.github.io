@@ -1189,8 +1189,11 @@
     const nodeRect = node.element.querySelector('.node-ring').getBoundingClientRect();
     const cardWidth = card.offsetWidth;
     const cardHeight = card.offsetHeight;
+    // Keep right of the node unless that runs off the stage or under the open detail panel.
+    const panelOpen = panel.classList.contains('is-open') && panel.offsetLeft > stageRect.width * .35;
+    const rightLimit = panelOpen ? panel.offsetLeft - 10 : stageRect.width - 10;
     let left = nodeRect.right - stageRect.left + 14;
-    if (left + cardWidth > stageRect.width - 10) left = nodeRect.left - stageRect.left - cardWidth - 14;
+    if (left + cardWidth > rightLimit) left = nodeRect.left - stageRect.left - cardWidth - 14;
     let top = nodeRect.top - stageRect.top + nodeRect.height / 2 - cardHeight / 2;
     top = Math.max(10, Math.min(stageRect.height - cardHeight - 10, top));
     card.style.transform = `translate(${Math.max(10, left).toFixed(0)}px, ${top.toFixed(0)}px)`;
@@ -1750,6 +1753,10 @@
   const touches = new Map();
   let pinch = null;
   let pressStart = null;
+  // A shift-click would otherwise extend any text selection on the page up to the graph.
+  graph.addEventListener('mousedown', (event) => {
+    if (event.shiftKey) event.preventDefault();
+  });
   graph.addEventListener('pointerdown', (event) => {
     if (event.target.closest('.graph-node, .hull-label')) return;
     stopTour();

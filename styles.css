@@ -121,6 +121,8 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .graph-controls button:last-child { border-right: 0; }
 .graph-controls [data-graph-zoom="reset"] { font-size: 11px; text-transform: uppercase; }
 .graph-controls button:hover { background: var(--raised); color: var(--yellow); }
+/* Shift-click traces a path; without this it also selects every label between the two clicks. */
+.knowledge-graph, .graph-modes, .graph-controls, .graph-instruction, .atlas-legend, .minimap { -webkit-user-select: none; user-select: none; }
 .graph-instruction { position: absolute; bottom: 10px; left: 14px; margin: 0; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; pointer-events: none; transition: opacity .3s; }
 /* Once the view is zoomed or moved, nodes can sit where the hint is, so it steps aside. */
 .atlas-stage.is-moved .graph-instruction { opacity: 0; }
@@ -133,7 +135,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .panel-meta div { padding-top: 8px; display: grid; grid-template-columns: 75px 1fr; border-top: 1px solid var(--line); }
 .panel-meta dt { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .panel-meta dd { margin: 0; font-size: 12px; }
-.panel-link { display: inline-flex; gap: 10px; font: 11px var(--mono); text-transform: uppercase; text-underline-offset: 4px; }
+.panel-link { display: inline-block; font: 11px var(--mono); text-transform: uppercase; text-underline-offset: 4px; }
 .panel-link[hidden] { display: none; }
 .atlas-legend { min-height: 44px; padding: 0 15px; display: flex; align-items: center; gap: 20px; border-top: 1px solid var(--line); color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .atlas-legend button { padding: 4px 6px; display: flex; align-items: center; gap: 7px; border: 1px solid transparent; background: transparent; color: inherit; cursor: pointer; font: inherit; text-transform: inherit; }
@@ -518,6 +520,9 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .contact-header .site-nav { background: var(--paper); color: var(--ink); border-color: var(--line); }
   .site-nav.is-open { transform: none; visibility: visible; transition: transform .35s var(--ease), visibility 0s; }
   .site-nav a { min-height: 48px; display: flex; align-items: center; border-top: 1px solid currentColor; font-size: 11px; }
+  /* In the stacked menu the underline would sit on the next row's divider; colour marks the page instead. */
+  .site-nav a::after { display: none; }
+  .site-nav a[aria-current="page"] { color: var(--signal); border-top-color: var(--ink); }
   .graph-home { padding-bottom: 18px; }
   .graph-home { gap: 10px; }
   .atlas-intro { font-size: 13px; line-height: 1.4; }
