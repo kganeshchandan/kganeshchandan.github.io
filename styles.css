@@ -106,6 +106,8 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .graph-node[data-id="ganesh"] .node-ring { fill: var(--yellow); stroke: var(--yellow); stroke-width: 3; }
 .graph-node[data-id="ganesh"] .node-label { fill: var(--paper); }
 .graph-node.is-selected .node-ring { stroke: var(--yellow); stroke-width: 3.5; }
+.node-focus { fill: none; stroke: var(--yellow); stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0; }
+.graph-node:focus-visible .node-focus { opacity: 1; }
 .node-label { fill: var(--ink); font: 500 11px var(--mono); text-anchor: middle; pointer-events: none; }
 .graph-controls { position: absolute; z-index: 3; top: 13px; right: 14px; display: flex; border: 1px solid var(--line); background: rgba(40,40,40,.9); }
 .graph-controls button { min-width: 36px; min-height: 36px; padding: 0 10px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font: 12px var(--mono); }
@@ -122,6 +124,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .panel-meta dt { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .panel-meta dd { margin: 0; font-size: 12px; }
 .panel-link { margin-top: 18px; display: inline-flex; gap: 10px; font: 11px var(--mono); text-transform: uppercase; text-underline-offset: 4px; }
+.panel-link[hidden] { display: none; }
 .atlas-legend { min-height: 44px; padding: 0 15px; display: flex; align-items: center; gap: 20px; border-top: 1px solid var(--line); color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .atlas-legend span { display: flex; align-items: center; gap: 7px; }
 .atlas-legend i { width: 8px; height: 8px; display: inline-block; border-radius: 50%; border: 1px solid var(--muted); }
@@ -155,7 +158,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .resume-facts article:nth-child(-n+2) { border-top: 1px solid var(--line); }
 .resume-facts span { font: 11px var(--mono); text-transform: uppercase; }
 .resume-facts h2 { margin: 32px 0 10px; font-size: var(--type-subheading); line-height: 1; letter-spacing: -.05em; }
-.resume-facts p { max-width: 530px; margin: 0; color: var(--muted); }
+.resume-facts p { max-width: 530px; margin: 0; color: var(--muted); text-wrap: pretty; }
 .resume-content { margin-top: var(--page-gap); }
 .resume-section { padding: var(--inset); display: grid; grid-template-columns: 25% 75%; background: var(--paper-deep); border: 1px solid var(--line); }
 .resume-section + .resume-section { border-top: 0; }
@@ -229,12 +232,12 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .timeline-body { margin-top: var(--page-gap); display: grid; grid-template-columns: minmax(260px, 30%) minmax(0, 1fr); gap: 0 clamp(32px, 5vw, 80px); align-items: start; }
 
 /* Year dial: the sticky "calendar" that turns over as the reader moves through the years */
-.year-dial { position: sticky; top: calc(var(--header-h) + 24px); padding: 32px var(--inset) 28px; background: var(--paper-deep); border: 1px solid var(--line); }
+.year-dial { container-type: inline-size; position: sticky; top: calc(var(--header-h) + 24px); padding: 32px var(--inset) 28px; background: var(--paper-deep); border: 1px solid var(--line); }
 .year-dial .eyebrow { margin-bottom: 18px; color: var(--muted); }
-.dial-year { margin: 0; overflow: hidden; color: var(--signal); font-size: clamp(72px, 8vw, 116px); font-weight: 620; line-height: .85; letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
+.dial-year { margin: 0; overflow: hidden; color: var(--signal); font-size: min(116px, 28cqi); font-weight: 620; line-height: .85; letter-spacing: -.075em; font-variant-numeric: tabular-nums; }
 .dial-year.is-turning { animation: dial-turn .5s var(--ease); }
 @keyframes dial-turn { from { opacity: 0; transform: translateY(35%); } to { opacity: 1; transform: none; } }
-.dial-caption { min-height: 2.1em; margin: 22px 0 8px; font-size: var(--type-subheading); font-weight: 600; line-height: 1.05; letter-spacing: -.035em; text-wrap: balance; }
+.dial-caption { min-height: 3.2em; margin: 22px 0 8px; font-size: var(--type-subheading); font-weight: 600; line-height: 1.05; letter-spacing: -.035em; text-wrap: balance; }
 .dial-count { margin: 0; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .dial-months { margin: 26px 0 0; padding: 0; display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; list-style: none; }
 .dial-months li { position: relative; padding: 7px 0 14px; color: var(--muted); border-top: 2px solid var(--line); font: 10px var(--mono); text-align: center; transition: color .25s, border-color .25s; }
@@ -271,7 +274,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .repo-entry h3 a { text-decoration-thickness: 1px; text-decoration-color: transparent; text-underline-offset: 6px; transition: color .2s, text-decoration-color .2s; }
 .repo-entry h3 a:hover, .repo-entry h3 a:focus-visible { color: var(--yellow); text-decoration-color: currentColor; }
 @media (hover: hover) {
-  .repo-entry h3 a::after { opacity: 0; transition: opacity .2s; }
+  .repo-entry h3 a::after { position: absolute; opacity: 0; transition: opacity .2s; }
   .repo-entry h3 a:hover::after, .repo-entry h3 a:focus-visible::after { opacity: 1; }
 }
 .repo-entry p { max-width: 640px; margin: 0; color: var(--muted); font-size: 15px; }
@@ -324,7 +327,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .site-nav { position: fixed; inset: 66px 0 auto; padding: 18px 18px 25px; display: grid; gap: 0; background: var(--paper); color: var(--ink); border-bottom: 1px solid var(--line); transform: translateY(-130%); visibility: hidden; transition: transform .35s var(--ease), visibility .35s; }
   .site-header-dark .site-nav { background: var(--paper); color: var(--ink); border-color: var(--line); }
   .contact-header .site-nav { background: var(--paper); color: var(--ink); border-color: var(--line); }
-  .site-nav.is-open { transform: none; visibility: visible; }
+  .site-nav.is-open { transform: none; visibility: visible; transition: transform .35s var(--ease), visibility 0s; }
   .site-nav a { min-height: 48px; display: flex; align-items: center; border-top: 1px solid currentColor; font-size: 11px; }
   .graph-home { padding-bottom: 18px; }
   .graph-home { gap: 10px; }
@@ -334,6 +337,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .atlas-filters { min-width: 0; flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .atlas-filters::-webkit-scrollbar { display: none; }
   .filter-button { flex: none; min-height: 44px; padding: 6px 10px; }
+  .filter-button:focus-visible { outline: 2px solid var(--yellow); outline-offset: -6px; }
   .search-toggle { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font-size: 18px; }
   .atlas-toolbar:not(.is-searching) .atlas-search-wrap { display: none; }
   .atlas-toolbar.is-searching .atlas-filters { display: none; }
@@ -345,7 +349,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .atlas-legend { padding: 8px; flex-wrap: wrap; gap: 7px 13px; }
   .atlas-count { display: none !important; }
   .graph-instruction { display: none; }
-  .node-panel { top: auto; right: 12px; bottom: 12px; width: calc(100% - 24px); max-height: calc(100% - 24px); overflow-y: auto; }
+  .node-panel { top: auto; right: 12px; bottom: 12px; width: calc(100% - 24px); max-height: 46%; padding: 20px; overflow-y: auto; }
   .page-hero, .timeline-hero { padding-block: 38px; }
   .page-hero h1, .timeline-hero h1, .contact-main h1 { line-height: .86; }
   .page-intro, .timeline-intro { min-width: 0; max-width: 100%; }
@@ -378,7 +382,7 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .repo-entry { padding: 18px 0 18px 30px; grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .repo-entry::before { top: 22px; }
   .repo-entry time { padding-top: 0; text-align: left; }
-  .repo-entry h3 { overflow-wrap: anywhere; font-size: 26px; }
+  .repo-entry h3 { overflow-wrap: anywhere; font-size: clamp(20px, 6vw, 26px); }
   .site-footer { padding: 25px var(--gutter); align-items: flex-start; flex-direction: column; justify-content: center; gap: 8px; }
 }
 

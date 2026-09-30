@@ -22,8 +22,22 @@ menuToggle?.addEventListener('click', () => {
   nav?.classList.toggle('is-open', !open);
 });
 nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()));
+const menuIsOpen = () => menuToggle?.getAttribute('aria-expanded') === 'true';
 window.addEventListener('keydown', (event) => {
+  if (!menuIsOpen()) return;
+  // Only claim Escape while the menu is actually open, so it never steals focus from other widgets.
   if (event.key === 'Escape') closeMenu(true);
+  // While the menu covers the page, Tab cycles between the toggle and the menu links.
+  if (event.key === 'Tab') {
+    const stops = [menuToggle, ...nav.querySelectorAll('a')];
+    const index = stops.indexOf(document.activeElement);
+    const next = event.shiftKey ? (index <= 0 ? stops.length - 1 : index - 1) : (index === stops.length - 1 ? 0 : index + 1);
+    event.preventDefault();
+    stops[next].focus();
+  }
+});
+document.addEventListener('pointerdown', (event) => {
+  if (menuIsOpen() && !header.contains(event.target)) closeMenu();
 });
 
 const graph = document.querySelector('[data-graph]');
@@ -40,102 +54,102 @@ if (graph) {
   const nodes = [
     {
       id: 'ganesh', label: 'Ganesh', kind: 'root', group: 'all', tx: 450, ty: 315, radius: 43,
-      description: 'Software engineer and AI researcher connecting scientific questions, human signals, and intelligent machines.',
+      description: 'Software engineer and researcher. I build AI for robotics, wearable health sensing and molecular science.',
       meta: { Focus: 'Robotics & AI', Base: 'Bangalore, India' }, link: 'resume.html'
     },
     {
       id: 'iiith', label: 'IIIT-H', kind: 'place', group: 'research', tx: 390, ty: 105, radius: 32,
-      description: 'Integrated B.Tech and M.S. by Research, followed by three years of computational-science research.',
+      description: 'Where I did an integrated B.Tech and M.S. by Research, including three years of research in computational science.',
       meta: { Period: '2019–2024', Recognition: 'Academic Research Award' }, link: 'timeline.html#year-2021'
     },
     {
       id: 'samsung', label: 'Samsung', kind: 'place', group: 'professional', tx: 690, ty: 310, radius: 34,
-      description: 'Senior Software Engineer in the Advanced Research and Standards Team, currently focused on robotics and AI.',
+      description: 'I\'m a Senior Software Engineer in the Advanced Research and Standards team, working on robotics and AI.',
       meta: { Since: 'July 2024', Awards: 'Excellence · Spot' }, link: 'resume.html'
     },
     {
       id: 'virtual-labs', label: 'Virtual Labs', kind: 'place', group: 'build', tx: 380, ty: 545, radius: 31,
-      description: 'Interactive Three.js simulations of solid-state chemistry experiments for a Ministry of Education initiative.',
+      description: 'I built Three.js simulations of solid-state chemistry experiments for a Ministry of Education project.',
       meta: { Role: 'Software Developer', Period: '2022–2023' }, link: 'timeline.html#year-2022'
     },
     {
       id: 'molecular-ai', label: 'Molecular AI', kind: 'domain', group: 'research', tx: 215, ty: 220, radius: 34,
-      description: 'Generative models and learned representations for molecules, properties, and drug discovery.',
+      description: 'Using generative models to design molecules and predict their properties, mostly for drug discovery.',
       meta: { Methods: 'GNNs · GPT · Diffusion', Domain: 'Scientific AI' }
     },
     {
       id: 'multimodal', label: 'Multimodal', kind: 'domain', group: 'research', tx: 330, ty: 300, radius: 31,
-      description: 'Learning shared representations across molecular graphs, spectra, images, language, and neural signals.',
+      description: 'Training models that link different kinds of data: molecular graphs, spectra, images, text and brain signals.',
       meta: { Modalities: 'Graphs · Spectra · fMRI', Method: 'Contrastive learning' }
     },
     {
       id: 'biosensing', label: 'Biosensing', kind: 'domain', group: 'professional', tx: 630, ty: 185, radius: 32,
-      description: 'AI for wearable PPG and audio signals, including heart health, hydration, glucose, and machine health.',
+      description: 'AI on PPG and audio signals from wearables, for heart health, hydration, glucose and machine health.',
       meta: { Evidence: '2 patents filed', Platform: 'Wearable edge devices' }
     },
     {
       id: 'robotics', label: 'Robotics', kind: 'domain', group: 'professional', tx: 765, ty: 405, radius: 32,
-      description: 'Current exploration of embodied intelligence, robotics, and systems that learn how the world behaves.',
+      description: 'What I\'m working on now: robots, and models that learn how the physical world behaves.',
       meta: { Focus: 'Embodied intelligence', Direction: 'World models' }
     },
     {
       id: 'neuro-ai', label: 'Neuro-AI', kind: 'domain', group: 'research', tx: 270, ty: 430, radius: 31,
-      description: 'Cross-modal learning between fMRI brain activations, attention, and speech representations.',
+      description: 'Linking fMRI brain activity with attention and with how models represent speech.',
       meta: { Signals: '3D fMRI', Models: 'CNNs · Transformers' }
     },
     {
       id: 'software', label: 'Software', kind: 'domain', group: 'build', tx: 515, ty: 505, radius: 31,
-      description: 'Interactive scientific tools, local AI applications, systems coursework, games, and web software.',
+      description: 'Everything else I\'ve built: science tools, local AI apps, games, web apps and systems coursework.',
       meta: { Repositories: '23 original public repos', Range: 'Systems to interfaces' }
     },
     {
       id: 'smen', label: 'SMEN', kind: 'project', group: 'research', tx: 190, ty: 95, radius: 27,
-      description: 'A spectra-and-molecule encoder network for ranking and generating molecular structures from infrared spectra.',
+      description: 'A model that takes an infrared spectrum and ranks or generates the molecules that could have produced it.',
       meta: { Evidence: 'Peer-reviewed evaluation', Status: 'Digital Discovery, 2024' }, link: 'https://doi.org/10.1039/D4DD00135D'
     },
     {
       id: 'molgpt', label: 'MolGPT 2.0', kind: 'project', group: 'research', tx: 75, ty: 180, radius: 30,
-      description: 'Multi-objective molecular generation using transformer encoder-decoder models and direct preference optimization.',
+      description: 'Generates molecules that meet several goals at once, using an encoder-decoder transformer tuned with direct preference optimization.',
       meta: { Evaluation: 'Checkpoint-dependent', Role: 'Initial codebase author' }, link: 'https://github.com/devalab/MolGPT2.0'
     },
     {
       id: 'bias-study', label: 'Bias study', kind: 'project', group: 'research', tx: 85, ty: 330, radius: 29,
-      description: 'Research exposing latent biases in popular datasets and models for binding-affinity prediction.',
+      description: 'Found hidden biases in the popular datasets and models used to predict binding affinity.',
       meta: { Models: 'DeepDTA · GraphDTA · more', Status: 'Peer reviewed' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
     },
     {
       id: 'beds', label: 'BEDS', kind: 'project', group: 'research', tx: 150, ty: 485, radius: 26,
-      description: 'Brain Encoding and Decoding of Speech: a private research implementation with a public project summary.',
+      description: 'Brain Encoding and Decoding of Speech. The research code is private; the repo has a public summary.',
       meta: { Input: 'fMRI activations', Output: 'Speech representations' }, link: 'https://github.com/kganeshchandan/BEDS'
     },
     {
       id: 'jepa', label: 'JEPA GOAT', kind: 'project', group: 'build', tx: 800, ty: 535, radius: 29,
-      description: 'A lightweight environment for collecting actions, frames, and object dynamics for future JEPA experiments.',
+      description: 'A small game environment that records frames, actions and object movement, to use later for JEPA experiments.',
       meta: { Area: 'World models', Stack: 'Python · Pygame' }, link: 'https://github.com/kganeshchandan/jepa-goat'
     },
     {
       id: 'manga', label: 'Manga AI', kind: 'project', group: 'build', tx: 610, ty: 575, radius: 28,
-      description: 'A local-first manga colorizer combining a browser extension, FastAPI service, and local GAN inference.',
+      description: 'Colors manga in the browser. A Chrome extension sends pages to a FastAPI service that runs a GAN on your own machine.',
       meta: { Privacy: 'Local-first', Stack: 'JavaScript · Python' }, link: 'https://github.com/kganeshchandan/manga-colorizer'
     },
     {
       id: 'molvis', label: 'MolVis', kind: 'project', group: 'build', tx: 455, ty: 590, radius: 27,
-      description: 'An immersive Apple Vision Pro application for exploring and manipulating molecular structures.',
+      description: 'An Apple Vision Pro app for looking at molecules in 3D and moving them around.',
       meta: { Platform: 'visionOS', Stack: 'RealityKit · SwiftUI' }, link: 'https://github.com/kganeshchandan/MolVis'
     },
     {
       id: 'paper-spectra', label: 'Digital Discovery', kind: 'paper', group: 'publication', tx: 250, ty: 35, radius: 25,
-      description: 'Spectra to structure: contrastive learning framework for library ranking and molecular generation.',
+      description: 'Spectra to structure: contrastive learning to rank candidate molecules and generate new ones from spectra.',
       meta: { Published: '2024', Journal: 'Digital Discovery' }, link: 'https://doi.org/10.1039/D4DD00135D'
     },
     {
       id: 'paper-generative', label: 'GenAI review', kind: 'paper', group: 'publication', tx: 65, ty: 70, radius: 25,
-      description: 'A peer-reviewed review of generative artificial intelligence for small-molecule drug design.',
+      description: 'A review of generative AI methods for designing small-molecule drugs.',
       meta: { Published: '2024', Journal: 'Current Opinion in Biotechnology' }, link: 'https://doi.org/10.1016/j.copbio.2024.103175'
     },
     {
       id: 'paper-bias', label: 'ACS Omega', kind: 'paper', group: 'publication', tx: 45, ty: 420, radius: 25,
-      description: 'Peer-reviewed study of latent biases in binding-affinity models using popular datasets.',
+      description: 'The published bias study: binding-affinity models and the datasets they are trained on.',
       meta: { Published: '2023', Journal: 'ACS Omega' }, link: 'https://doi.org/10.1021/acsomega.2c06781'
     }
   ];
@@ -214,10 +228,14 @@ if (graph) {
     const rect = graphStage.getBoundingClientRect();
     const aspect = Math.max(.35, rect.width / Math.max(rect.height, 1));
     if (aspect >= 1) {
-      return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 };
+      // Wide-but-short canvases (landscape phones) keep desktop-sized nodes so the layout has room.
+      return { width: BASE_WIDTH, height: Math.max(340, Math.min(BASE_HEIGHT, BASE_WIDTH / aspect)), mobile: rect.width <= 720 && aspect < 1.3 };
     }
+    // Portrait canvases get a taller frame of the same shape, so the layout fills the stage
+    // instead of sitting in a letterboxed band across the middle.
     const mobile = rect.width <= 720;
-    return { width: Math.max(mobile ? 750 : 500, BASE_HEIGHT * aspect), height: BASE_HEIGHT, mobile };
+    const portraitWidth = Math.max(mobile ? 640 : 500, BASE_HEIGHT * aspect);
+    return { width: portraitWidth, height: Math.max(BASE_HEIGHT, portraitWidth / aspect), mobile };
   };
 
   const initialLayout = measureGraph();
@@ -241,6 +259,7 @@ if (graph) {
     node.ty = padding + ((node.baseTy - layoutBounds.minY) / (layoutBounds.maxY - layoutBounds.minY)) * (height - padding * 2);
   };
   nodes.forEach(placeNode);
+
 
   let defaultView = { x: 0, y: 0, width, height };
   let currentView = { ...defaultView };
@@ -269,11 +288,41 @@ if (graph) {
   };
   setView(currentView);
 
-  // Shrink a label until its longest line fits inside the circle (DM Mono glyphs are ~.6em wide).
+  // Ease the camera to a new view; any direct pan, zoom or resize cancels the glide.
+  let viewFrame = null;
+  const stopGlide = () => {
+    if (viewFrame) cancelAnimationFrame(viewFrame);
+    viewFrame = null;
+  };
+  const glideView = (target) => {
+    stopGlide();
+    if (reducedMotion) {
+      setView(target);
+      return;
+    }
+    const from = { ...currentView };
+    const start = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - start) / 360);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setView({ x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased, width: from.width + (target.width - from.width) * eased });
+      viewFrame = t < 1 ? requestAnimationFrame(step) : null;
+    };
+    viewFrame = requestAnimationFrame(step);
+  };
+
+  // Shrink a label until its widest line fits inside the circle. Measure the real glyphs when the
+  // label is rendered (proportional lettering varies a lot); otherwise estimate from character count.
   const sizeLabel = (node) => {
-    const longest = Math.max(...node.labelLines.map((line) => line.length));
     const baseSize = mobileView ? 17 : 9;
-    const fitSize = (node.renderRadius * 2 * .8) / (longest * .6);
+    const room = node.renderRadius * 2 * .8;
+    node.text.style.fontSize = `${baseSize}px`;
+    const lines = [...node.text.querySelectorAll('tspan')];
+    const widest = node.text.isConnected
+      ? Math.max(...(lines.length ? lines : [node.text]).map((line) => line.getComputedTextLength()))
+      : 0;
+    const longest = Math.max(...node.labelLines.map((line) => line.length));
+    const fitSize = widest > 0 ? baseSize * room / widest : room / (longest * .6);
     node.text.style.fontSize = `${Math.min(baseSize, fitSize).toFixed(2)}px`;
   };
 
@@ -305,7 +354,9 @@ if (graph) {
     node.renderRadius = displayRadius;
     const circle = makeSvg('circle', { class: 'node-ring', r: displayRadius });
     node.circle = circle;
-    visual.append(circle);
+    // Keyboard focus ring, drawn just outside the node so it reads on every fill style.
+    node.focusRing = makeSvg('circle', { class: 'node-focus', r: displayRadius + 7 });
+    visual.append(node.focusRing, circle);
 
     const words = node.label.split(' ');
     const text = makeSvg('text', { class: 'node-label' });
@@ -323,12 +374,14 @@ if (graph) {
       text.textContent = node.label;
     }
     node.text = text;
-    sizeLabel(node);
     visual.append(text);
     group.append(visual);
     nodeLayer.append(group);
     node.element = group;
+    sizeLabel(node);
   });
+  // Web fonts arrive after first paint; refit the lettering once they are in.
+  document.fonts?.ready.then(() => nodes.forEach(sizeLabel));
 
   links.forEach((link) => {
     const line = makeSvg('line', { class: 'graph-edge', pathLength: '1' });
@@ -364,8 +417,13 @@ if (graph) {
   const clampX = (node, x) => Math.max(node.renderRadius + EDGE_GAP, Math.min(width - node.renderRadius - EDGE_GAP, x));
   const clampY = (node, y) => Math.max(node.renderRadius + EDGE_GAP, Math.min(height - node.renderRadius - EDGE_GAP, y));
 
+  const MAX_SPEED = 9;
+  // Nodes still growing out of their parent follow their own tween; letting the physics
+  // see them would put two nodes on the same point and fling the parent across the canvas.
+  const isSettled = (node) => node.spawned && !node.growthFrame;
+
   const simulate = () => {
-    const activeNodes = nodes.filter((node) => node.spawned);
+    const activeNodes = nodes.filter(isSettled);
     activeNodes.forEach((node) => {
       node.vx *= .88;
       node.vy *= .88;
@@ -386,7 +444,8 @@ if (graph) {
           distance = Math.SQRT2;
         }
         const minimumDistance = left.renderRadius + right.renderRadius + 10;
-        const force = 700 / (distance * distance) + Math.max(0, minimumDistance - distance) * .025;
+        const falloff = Math.max(distance, minimumDistance * .5);
+        const force = 700 / (falloff * falloff) + Math.max(0, minimumDistance - distance) * .025;
         const forceX = (dx / distance) * force;
         const forceY = (dy / distance) * force;
         if (left !== dragging) {
@@ -403,7 +462,7 @@ if (graph) {
     links.forEach((link) => {
       const source = nodeMap.get(link.source);
       const target = nodeMap.get(link.target);
-      if (!source.spawned || !target.spawned) return;
+      if (!isSettled(source) || !isSettled(target)) return;
       const dx = target.x - source.x;
       const dy = target.y - source.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
@@ -426,6 +485,11 @@ if (graph) {
         node.vx = 0;
         node.vy = 0;
         return;
+      }
+      const speed = Math.hypot(node.vx, node.vy);
+      if (speed > MAX_SPEED) {
+        node.vx *= MAX_SPEED / speed;
+        node.vy *= MAX_SPEED / speed;
       }
       node.x = clampX(node, node.x + node.vx);
       node.y = clampY(node, node.y + node.vy);
@@ -485,7 +549,8 @@ if (graph) {
       return total + closest;
     }, 0) / queryWords.length;
     const labelScore = editDistance(query, label) / Math.max(query.length, label.length, 1);
-    return .25 + Math.min(tokenScore, labelScore);
+    // Break ties in favour of the item whose own name is closest to the query.
+    return .25 + Math.min(tokenScore, labelScore) + labelScore / 100;
   };
 
   const applyVisibility = () => {
@@ -519,9 +584,34 @@ if (graph) {
       link.element.classList.toggle('is-muted', Boolean(filterMuted || (selectedId && !related)));
       link.element.classList.toggle('is-related', Boolean(related && !filterMuted));
     });
+
   };
 
-  const inspectNode = (node, moveFocus = false) => {
+  // The detail panel sits over the canvas (right-hand card on desktop, bottom sheet on phones).
+  // If it would cover the node being inspected, slide the view so the node stays in sight.
+  const keepClearOfPanel = (node, view = currentView) => {
+    const stageRect = graphStage.getBoundingClientRect();
+    const scale = Math.min(stageRect.width / view.width, stageRect.height / view.height);
+    const offsetX = (stageRect.width - view.width * scale) / 2;
+    const offsetY = (stageRect.height - view.height * scale) / 2;
+    const x = offsetX + (node.x - view.x) * scale;
+    const y = offsetY + (node.y - view.y) * scale;
+    const reach = node.renderRadius * scale + 20;
+    const box = { left: panel.offsetLeft, top: panel.offsetTop, right: panel.offsetLeft + panel.offsetWidth, bottom: panel.offsetTop + panel.offsetHeight };
+    const covered = x + reach > box.left && x - reach < box.right && y + reach > box.top && y - reach < box.bottom;
+    if (!covered) {
+      if (view !== currentView) glideView(view);
+      return;
+    }
+    const dockedRight = box.left > stageRect.width * .35;
+    glideView({
+      ...view,
+      x: view.x + (dockedRight ? (x - box.left / 2) / scale : 0),
+      y: view.y + (dockedRight ? 0 : (y - box.top / 2) / scale)
+    });
+  };
+
+  const inspectNode = (node, moveFocus = false, view = currentView) => {
     selectedId = node.id;
     lastFocusedNode = node;
     panelType.textContent = node.kind === 'paper' ? 'Publication' : node.kind === 'place' ? 'Institution' : node.kind === 'domain' ? 'Domain' : node.kind === 'root' ? 'Profile' : 'Project';
@@ -553,6 +643,7 @@ if (graph) {
     }
     panel.classList.add('is-open');
     applyVisibility();
+    keepClearOfPanel(node, view);
     if (moveFocus) panel.focus();
   };
 
@@ -617,6 +708,7 @@ if (graph) {
 
   graph.addEventListener('pointerdown', (event) => {
     if (event.target.closest('.graph-node')) return;
+    stopGlide();
     panning = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, view: { ...currentView } };
     graph.setPointerCapture(event.pointerId);
     graph.classList.add('is-dragging');
@@ -638,6 +730,7 @@ if (graph) {
   graph.addEventListener('pointercancel', stopPanning);
 
   const zoomAt = (factor, point = { x: currentView.x + currentView.width / 2, y: currentView.y + currentView.height / 2 }) => {
+    stopGlide();
     const newWidth = currentView.width * factor;
     const xRatio = (point.x - currentView.x) / currentView.width;
     const yRatio = (point.y - currentView.y) / currentView.height;
@@ -650,12 +743,18 @@ if (graph) {
   }, { passive: false });
   document.querySelectorAll('[data-graph-zoom]').forEach((button) => {
     button.addEventListener('click', () => {
-      if (button.dataset.graphZoom === 'reset') setView({ ...defaultView });
+      if (button.dataset.graphZoom === 'reset') {
+        stopGlide();
+        setView({ ...defaultView });
+      }
       else zoomAt(button.dataset.graphZoom === 'in' ? .8 : 1.25);
     });
   });
 
   document.querySelector('[data-panel-close]')?.addEventListener('click', () => closePanel());
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && panel.classList.contains('is-open') && !event.target.closest?.('.atlas-search-wrap')) closePanel();
+  });
 
   document.querySelectorAll('[data-filter]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -679,12 +778,20 @@ if (graph) {
     hideSearchResults();
     if (item.nodeId) {
       const node = nodeMap.get(item.nodeId);
-      inspectNode(node);
       const focusWidth = mobileView ? 400 : 650;
-      setView({ x: node.x - focusWidth / 2, y: node.y - (focusWidth * defaultView.height / defaultView.width) / 2, width: focusWidth });
+      inspectNode(node, false, { x: node.x - focusWidth / 2, y: node.y - (focusWidth * defaultView.height / defaultView.width) / 2, width: focusWidth, height: focusWidth * defaultView.height / defaultView.width });
     } else if (item.url) {
       window.open(item.url, '_blank', 'noopener,noreferrer');
     }
+  };
+
+  const showNoResults = (query) => {
+    const message = document.createElement('p');
+    message.className = 'search-empty';
+    message.textContent = `No matches for “${query}”.`;
+    searchResults.replaceChildren(message);
+    searchResults.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
   };
 
   const renderSearchResults = () => {
@@ -722,12 +829,18 @@ if (graph) {
       return;
     }
 
-    rankedResults = portfolioItems
+    const scored = portfolioItems
       .map((item) => ({ ...item, score: searchScore(item, searchTerm) }))
-      .sort((left, right) => left.score - right.score || left.label.localeCompare(right.label))
-      .slice(0, 5);
+      .sort((left, right) => left.score - right.score || left.label.localeCompare(right.label));
+    // Fuzzy (typo-tolerant) guesses only fill the list when nothing actually contains the query;
+    // otherwise they would light up unrelated nodes next to a real hit.
+    const direct = scored.filter((item) => item.score < .25);
+    const near = scored.filter((item) => item.score < .7);
+    rankedResults = (direct.length ? direct : near).slice(0, 5);
     searchMatches = new Set(rankedResults.map((item) => item.nodeId).filter(Boolean));
-    renderSearchResults();
+    // Nothing close: every node dims and the list says so rather than showing random items.
+    if (rankedResults.length) renderSearchResults();
+    else showNoResults(event.target.value.trim());
     applyVisibility();
   });
 
@@ -849,7 +962,9 @@ if (graph) {
 
   const graphResizeObserver = new ResizeObserver(() => {
     const nextLayout = measureGraph();
-    if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) return;
+    if (Math.abs(nextLayout.width - width) < 1 && Math.abs(nextLayout.height - height) < 1 && nextLayout.mobile === mobileView) {
+      return;
+    }
 
     width = nextLayout.width;
     height = nextLayout.height;
@@ -865,12 +980,15 @@ if (graph) {
       node.progress = node.spawned ? 1 : 0;
       node.renderRadius = node.radius * (mobileView ? 1.45 : .9);
       node.circle.setAttribute('r', node.renderRadius);
+      node.focusRing.setAttribute('r', node.renderRadius + 7);
       sizeLabel(node);
     });
     refreshLinkLengths();
     defaultView = { x: 0, y: 0, width, height };
+    stopGlide();
     setView(defaultView);
     render();
+    if (selectedId) keepClearOfPanel(nodeMap.get(selectedId));
     wakeSimulation(.5);
   });
   graphResizeObserver.observe(graphStage);
@@ -900,6 +1018,11 @@ if (dial) {
   const monthCells = [...dial.querySelectorAll('[data-dial-months] li')];
   const yearLinks = [...dial.querySelectorAll('.dial-years a')];
   const monthOf = (entry) => new Date(entry.querySelector('time').dateTime).getUTCMonth();
+  // A year's first entry turns over when its section header reaches the reading line, so the dial
+  // never keeps showing last year while the new year's heading is already on screen.
+  const triggers = entries.map((entry) => (entry === entry.parentElement.firstElementChild
+    ? entry.closest('[data-timeline-year]').querySelector('header')
+    : entry));
   let current = null;
 
   const showEntry = (entry) => {
@@ -939,8 +1062,8 @@ if (dial) {
     pending = false;
     const line = window.innerHeight * .4;
     let active = entries[0];
-    for (const entry of entries) {
-      if (entry.getBoundingClientRect().top <= line) active = entry;
+    for (const [index, entry] of entries.entries()) {
+      if (triggers[index].getBoundingClientRect().top <= line) active = entry;
       else break;
     }
     showEntry(active);
