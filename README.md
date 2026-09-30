@@ -11,7 +11,15 @@ A dependency-free personal website built with HTML, CSS, and JavaScript.
 
 ## Atlas interaction
 
-The home-page graph supports animated node and edge spawning, dragging, filtering, fuzzy search across graph items and all public repositories, keyboard selection, contextual detail panels, and reduced-motion preferences. It uses native SVG and browser APIs without a graph library.
+The home-page graph lives in `atlas.js`; the rest of the site's behaviour is in `script.js`. It uses native SVG and browser APIs without a graph library.
+
+- Two layouts: a force-directed network with shaded regions for each chapter of work, and a timeline with one lane per kind of node. Switch with the toggle or `T`.
+- A guided tour (`P`) that walks through the main story with camera moves and captions.
+- Hover or focus a node for a quick card; click for the detail panel; shift-click a second node to trace how the two connect.
+- Domains and institutions can fan out their public repositories as extra nodes.
+- Every node has a shareable link (`index.html#molgpt`); the panel's "Copy link" button copies it.
+- Curved edges that draw in on load, travelling particles on the selection, captions that appear when zoomed in, a minimap, pinch zoom, arrow-key travel between nodes and a shortcuts sheet (`?`).
+- Filtering, fuzzy search across graph items and all public repositories, and reduced-motion support throughout.
 
 The interface uses a consistent Gruvbox Dark Hard Material palette across every page.
 

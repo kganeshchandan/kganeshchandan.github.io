@@ -85,15 +85,18 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .atlas-stage { position: relative; min-height: 0; overflow: hidden; background-color: var(--paper); background-image: radial-gradient(var(--raised) .7px, transparent .7px); background-size: 22px 22px; }
 .knowledge-graph { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .knowledge-graph.is-dragging { cursor: grabbing; }
-.graph-edge { stroke: var(--edge); stroke-width: 1.5; stroke-linecap: round; vector-effect: non-scaling-stroke; opacity: 0; transition: opacity .35s, stroke .25s, stroke-width .25s; }
-.graph-edge.is-visible { opacity: 1; }
-.graph-edge.is-muted { opacity: .1; }
-.graph-edge.is-related { stroke: var(--yellow); stroke-width: 2.25; opacity: 1; }
+.graph-edge { fill: none; stroke: var(--edge); stroke-width: calc(1.05px * var(--zoom, 1)); stroke-linecap: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; transition: stroke-dashoffset .9s var(--ease), opacity .35s, stroke .25s, stroke-width .25s; }
+.graph-edge.is-visible { stroke-dashoffset: 0; }
+.graph-edge.is-muted { opacity: .08; }
+.graph-edge.is-related { stroke: var(--yellow); stroke-width: calc(1.6px * var(--zoom, 1)); opacity: 1; }
+.graph-edge.is-path { stroke: var(--yellow); stroke-width: calc(2.1px * var(--zoom, 1)); opacity: 1; }
 .graph-node { opacity: 0; cursor: pointer; outline: none; transition: opacity .45s var(--ease); }
 .node-visual { transform: scale(.2); transition: transform .9s var(--ease); }
 .graph-node.is-visible { opacity: 1; }
 .graph-node.is-visible .node-visual { transform: scale(1); }
-.graph-node.is-muted { opacity: .1; }
+.graph-node.is-muted { opacity: .16; }
+.graph-node.is-filtered { opacity: .07; pointer-events: none; }
+.graph-node.is-visible.is-filtered .node-visual { transform: scale(.6); }
 .graph-node.is-match .node-ring, .graph-node:focus-visible .node-ring { stroke: var(--yellow); stroke-width: 3; }
 .node-ring { fill: var(--paper-deep); stroke: var(--muted); stroke-width: 1.4; vector-effect: non-scaling-stroke; transition: fill .2s, stroke .2s; }
 .graph-node:hover .node-ring { fill: var(--raised); stroke: var(--yellow); }
@@ -111,7 +114,8 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .node-label { fill: var(--ink); font: 500 11px var(--mono); text-anchor: middle; pointer-events: none; }
 .graph-controls { position: absolute; z-index: 3; top: 13px; right: 14px; display: flex; border: 1px solid var(--line); background: rgba(40,40,40,.9); }
 .graph-controls button { min-width: 36px; min-height: 36px; padding: 0 10px; border: 0; border-right: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font: 12px var(--mono); }
-.graph-controls button:last-child { border-right: 0; font-size: 11px; text-transform: uppercase; }
+.graph-controls button:last-child { border-right: 0; }
+.graph-controls [data-graph-zoom="reset"] { font-size: 11px; text-transform: uppercase; }
 .graph-controls button:hover { background: var(--raised); color: var(--yellow); }
 .graph-instruction { position: absolute; bottom: 10px; left: 14px; margin: 0; color: var(--muted); font: 11px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
 .node-panel { position: absolute; z-index: 4; top: 62px; right: 18px; width: min(330px, calc(100% - 36px)); min-height: 220px; padding: 26px; background: var(--raised); color: var(--ink); border: 1px solid var(--yellow); box-shadow: var(--shadow); transform: translateX(calc(100% + 40px)); visibility: hidden; transition: transform .4s var(--ease), visibility .4s; }
@@ -123,14 +127,17 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .panel-meta div { padding-top: 8px; display: grid; grid-template-columns: 75px 1fr; border-top: 1px solid var(--line); }
 .panel-meta dt { color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
 .panel-meta dd { margin: 0; font-size: 12px; }
-.panel-link { margin-top: 18px; display: inline-flex; gap: 10px; font: 11px var(--mono); text-transform: uppercase; text-underline-offset: 4px; }
+.panel-link { display: inline-flex; gap: 10px; font: 11px var(--mono); text-transform: uppercase; text-underline-offset: 4px; }
 .panel-link[hidden] { display: none; }
 .atlas-legend { min-height: 44px; padding: 0 15px; display: flex; align-items: center; gap: 20px; border-top: 1px solid var(--line); color: var(--muted); font: 11px var(--mono); text-transform: uppercase; }
-.atlas-legend span { display: flex; align-items: center; gap: 7px; }
+.atlas-legend button { padding: 4px 6px; display: flex; align-items: center; gap: 7px; border: 1px solid transparent; background: transparent; color: inherit; cursor: pointer; font: inherit; text-transform: inherit; }
+.atlas-legend button:hover, .atlas-legend button[aria-pressed="true"] { border-color: var(--line); color: var(--ink); }
+.atlas-legend button[hidden] { display: none; }
 .atlas-legend i { width: 8px; height: 8px; display: inline-block; border-radius: 50%; border: 1px solid var(--muted); }
 .atlas-legend .legend-domain { background: var(--acid); border-color: var(--acid); }
 .atlas-legend .legend-paper { background: var(--blue); border-color: var(--blue); }
 .atlas-legend .legend-place { border: 2px solid var(--aqua); }
+.atlas-legend .legend-repo { width: 7px; height: 7px; background: var(--raised); border-color: var(--muted); }
 .atlas-legend .atlas-count { margin-left: auto; }
 
 /* Shared inner pages */
@@ -304,13 +311,145 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 .reveal { opacity: 0; transform: translateY(18px); transition: opacity .5s var(--ease) var(--reveal-delay, 0s), transform .6s var(--ease) var(--reveal-delay, 0s); }
 .reveal.is-revealed { opacity: 1; transform: none; }
 
-/* Atlas: hover or focus previews a node's neighbourhood; selected edges flow outward */
-.knowledge-graph.is-previewing .graph-node:not(.is-near):not(.is-muted) { opacity: .3; }
+/* Atlas: hover or focus previews a node's neighbourhood */
+.knowledge-graph.is-previewing .graph-node:not(.is-near):not(.is-filtered) { opacity: .3; }
 .knowledge-graph.is-previewing .graph-edge.is-visible:not(.is-near) { opacity: .15; }
-.graph-edge.is-near { stroke: var(--yellow); stroke-width: 2; }
-.graph-edge.is-related { stroke-dasharray: 8 5; animation: edge-flow .9s linear infinite; }
-.graph-edge.is-related.flows-in { animation-direction: reverse; }
-@keyframes edge-flow { to { stroke-dashoffset: -13; } }
+.graph-edge.is-near { stroke: var(--yellow); stroke-width: calc(1.4px * var(--zoom, 1)); }
+
+/* ---------- Atlas: layers, regions, motion and overlays ---------- */
+/* Idle float: a slow, barely-there sway so the map feels alive; paused while dragging */
+.node-float { animation: node-float var(--float-duration, 6s) ease-in-out var(--float-delay, 0s) infinite alternate; }
+.knowledge-graph.is-dragging .node-float { animation-play-state: paused; }
+@keyframes node-float { from { transform: translateY(-1.4px); } to { transform: translateY(1.4px); } }
+
+/* Soft glow behind the root and whatever is selected */
+.node-halo { fill: var(--yellow); opacity: 0; filter: blur(7px); transition: opacity .35s; pointer-events: none; }
+.graph-node[data-id="ganesh"] .node-halo { opacity: .16; }
+.graph-node.is-selected .node-halo, .graph-node.is-path .node-halo { opacity: .3; }
+
+/* Type badge on each node's rim */
+.node-badge { color: var(--muted); pointer-events: none; }
+.node-badge circle { fill: var(--paper-deep); stroke: currentColor; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.node-badge path { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.graph-node[data-kind="place"] .node-badge { color: var(--aqua); }
+.graph-node[data-kind="domain"] .node-badge { color: var(--acid); }
+.graph-node[data-kind="paper"] .node-badge { color: var(--blue); }
+
+/* One-line captions that appear under nodes once you zoom in */
+.node-caption { fill: var(--muted); font-family: var(--mono); text-anchor: middle; opacity: 0; paint-order: stroke; stroke: var(--paper); stroke-width: 2px; stroke-linejoin: round; transition: opacity .3s; pointer-events: none; }
+.knowledge-graph.is-zoomed .node-caption { opacity: 1; }
+
+/* Repositories fanned out from a node: small dots with their name underneath */
+.graph-node[data-kind="repo"] .node-ring { fill: var(--raised); stroke: var(--muted); }
+.graph-node[data-kind="repo"]:hover .node-ring { stroke: var(--yellow); }
+.graph-node[data-kind="repo"] .node-label { fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 2.5px; stroke-linejoin: round; }
+/* The timeline packs repositories tightly, so their names appear on demand */
+.knowledge-graph.is-timeline .graph-node[data-kind="repo"] .node-label { opacity: 0; transition: opacity .2s; }
+.knowledge-graph.is-timeline.is-zoomed .graph-node[data-kind="repo"] .node-label,
+.knowledge-graph.is-timeline .graph-node[data-kind="repo"]:is(:hover, :focus-visible, .is-near, .is-selected, .is-path) .node-label { opacity: 1; }
+
+/* Search, path and legend states */
+.graph-node.is-path .node-ring { stroke: var(--yellow); stroke-width: 3.5; }
+.knowledge-graph.is-legend .graph-node:not(.is-kind):not(.is-filtered) { opacity: .2; }
+.knowledge-graph.is-legend .graph-edge.is-visible { opacity: .25; }
+
+/* Particles travelling along highlighted edges, and the ripple when a node is picked */
+.graph-particle { fill: var(--yellow); pointer-events: none; }
+.graph-ripple { fill: none; stroke: var(--yellow); stroke-width: 2; vector-effect: non-scaling-stroke; transform-box: fill-box; transform-origin: center; pointer-events: none; animation: ripple .8s var(--ease) forwards; }
+@keyframes ripple { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(2.3); } }
+
+/* Cluster regions */
+.hull-layer { opacity: 0; transition: opacity .6s; }
+.knowledge-graph.is-ready .hull-layer { opacity: 1; }
+.knowledge-graph.has-focus .hull-layer, .knowledge-graph.is-legend .hull-layer { opacity: .35; }
+.hull { color: var(--blue); transition: opacity .3s; }
+.hull[data-cluster="samsung"] { color: var(--aqua); }
+.hull[data-cluster="builds"] { color: var(--signal); }
+.hull.is-empty { opacity: 0; pointer-events: none; }
+.hull-shape { fill: currentColor; fill-opacity: .05; stroke: currentColor; stroke-opacity: .32; stroke-width: 1; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; transition: fill-opacity .3s, stroke-opacity .3s; }
+.hull.is-active .hull-shape { fill-opacity: .1; stroke-opacity: .7; }
+.hull-label { fill: currentColor; font: 500 calc(8px * var(--zoom, 1)) var(--mono); letter-spacing: .08em; text-anchor: middle; text-transform: uppercase; cursor: zoom-in; outline: none; paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round; }
+.hull-label:focus-visible { text-decoration: underline; }
+
+/* Timeline layout: lanes and year lines replace the regions */
+.axis-layer { opacity: 0; transition: opacity .5s; pointer-events: none; }
+.knowledge-graph.is-timeline .axis-layer { opacity: 1; }
+.knowledge-graph.is-timeline .hull-layer { opacity: 0; pointer-events: none; }
+.axis-lane rect { fill: var(--ink); fill-opacity: .025; }
+.axis-lane text { fill: var(--muted); font: 8px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.axis-year line { stroke: var(--line); stroke-dasharray: 2 5; vector-effect: non-scaling-stroke; }
+.axis-year text { fill: var(--muted); font: 9px var(--mono); }
+
+/* Layout toggle and tour, top-left of the canvas */
+.graph-modes { position: absolute; z-index: 3; top: 13px; left: 14px; display: flex; gap: 8px; }
+.layout-toggle { display: flex; border: 1px solid var(--line); background: rgba(40,40,40,.9); }
+.layout-toggle button, .tour-button { min-height: 36px; padding: 0 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font: 11px var(--mono); text-transform: uppercase; }
+.layout-toggle button + button { border-left: 1px solid var(--line); }
+.layout-toggle button[aria-pressed="true"] { background: var(--raised); color: var(--yellow); }
+.layout-toggle button:hover, .tour-button:hover { color: var(--ink); }
+.tour-button { border: 1px solid var(--line); background: rgba(40,40,40,.9); color: var(--ink); }
+.tour-button[aria-pressed="true"] { border-color: var(--yellow); color: var(--yellow); }
+.tour-button span { margin-right: 4px; font-size: 9px; }
+
+/* Hover card */
+.node-card { position: absolute; z-index: 5; top: 0; left: 0; width: min(260px, 70%); padding: 12px 14px; background: var(--raised); border: 1px solid var(--line); box-shadow: var(--shadow); pointer-events: none; animation: card-in .18s var(--ease); }
+.node-card[hidden] { display: none; }
+@keyframes card-in { from { opacity: 0; } }
+.node-card span { display: block; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+.node-card strong { display: block; margin: 4px 0 6px; font-size: 16px; line-height: 1.2; }
+.node-card p { display: -webkit-box; margin: 0; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.node-card small { display: block; margin-top: 8px; color: var(--yellow); font: 10px var(--mono); }
+
+/* Tour and path captions sit along the bottom of the canvas */
+.tour-bar, .path-bar { position: absolute; z-index: 6; left: 50%; bottom: 14px; width: min(620px, calc(100% - 28px)); padding: 14px 16px; background: var(--raised); border: 1px solid var(--yellow); box-shadow: var(--shadow); transform: translateX(-50%); animation: bar-in .3s var(--ease); }
+.tour-bar[hidden], .path-bar[hidden] { display: none; }
+@keyframes bar-in { from { opacity: 0; transform: translate(-50%, 10px); } }
+.tour-progress { position: absolute; top: 0; left: 0; right: 0; height: 2px; overflow: hidden; }
+.tour-progress i { display: block; height: 100%; background: var(--yellow); transform: scaleX(0); transform-origin: left; }
+.tour-step, .path-label { margin: 0 0 6px; color: var(--muted); font: 10px var(--mono); text-transform: uppercase; letter-spacing: .06em; }
+.tour-text { margin: 0; font-size: 15px; line-height: 1.5; }
+.path-text { margin: 0; color: var(--yellow); font: 12px/1.6 var(--mono); }
+.tour-actions { margin-top: 12px; display: flex; gap: 8px; }
+.tour-actions button, .path-bar button { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font: 11px var(--mono); text-transform: uppercase; }
+.tour-actions button:hover, .path-bar button:hover { border-color: var(--yellow); color: var(--yellow); }
+.tour-actions button:disabled { opacity: .35; cursor: default; }
+.tour-actions [data-tour-stop] { margin-left: auto; }
+.path-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0 14px; }
+.path-bar .path-label { grid-column: 1; }
+.path-bar .path-text { grid-column: 1; }
+.path-bar button { grid-row: 1 / 3; grid-column: 2; }
+.knowledge-graph.is-touring { cursor: default; }
+.atlas-stage:has(.tour-bar:not([hidden])) .graph-instruction, .atlas-stage:has(.path-bar:not([hidden])) .graph-instruction { visibility: hidden; }
+
+/* Detail panel actions */
+.panel-actions { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.panel-button { padding: 5px 9px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; font: 11px var(--mono); text-transform: uppercase; }
+.panel-button:hover { border-color: var(--yellow); color: var(--yellow); }
+.panel-button[hidden] { display: none; }
+
+/* Minimap, shown once you zoom or pan away from the full view */
+.minimap { position: absolute; z-index: 3; right: 14px; bottom: 14px; width: 150px; height: auto; aspect-ratio: 900 / 640; border: 1px solid var(--line); background: rgba(29,32,33,.9); cursor: crosshair; }
+.minimap[hidden] { display: none; }
+.minimap-frame { fill: none; }
+.minimap-dot { fill: var(--muted); opacity: .7; }
+.minimap-dot[data-kind="root"] { fill: var(--yellow); opacity: 1; }
+.minimap-dot[data-kind="domain"] { fill: var(--acid); }
+.minimap-dot[data-kind="paper"] { fill: var(--blue); }
+.minimap-dot[data-kind="place"] { fill: var(--aqua); }
+.minimap-view { fill: var(--yellow); fill-opacity: .08; stroke: var(--yellow); stroke-width: 6; }
+.atlas-stage:has(.node-panel.is-open) .minimap { right: calc(min(330px, 100% - 36px) + 32px); }
+
+/* Keyboard shortcuts */
+.shortcuts { width: min(440px, calc(100% - 32px)); padding: 26px; background: var(--raised); color: var(--ink); border: 1px solid var(--yellow); box-shadow: var(--shadow); }
+.shortcuts::backdrop { background: rgba(29,32,33,.7); }
+.shortcuts h2 { margin: 0 0 18px; font-size: 22px; letter-spacing: -.02em; }
+.shortcuts dl { margin: 0 0 20px; display: grid; gap: 0; }
+.shortcuts dl div { padding: 9px 0; display: grid; grid-template-columns: 150px 1fr; gap: 12px; border-top: 1px solid var(--line); }
+.shortcuts dt { color: var(--muted); font: 11px var(--mono); }
+.shortcuts dd { margin: 0; font-size: 14px; }
+.shortcuts kbd { padding: 1px 6px; border: 1px solid var(--line); color: var(--ink); font: 11px var(--mono); }
+.shortcuts button { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; font: 11px var(--mono); text-transform: uppercase; }
+.shortcuts button:hover { border-color: var(--yellow); color: var(--yellow); }
 
 /* Timeline dial: changed digits roll in the direction of travel; marked months are clickable */
 .dial-year span { display: inline-block; }
@@ -389,6 +528,18 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .search-results { right: auto; left: 0; width: 100%; }
   .atlas-legend { padding: 8px; flex-wrap: wrap; gap: 7px 13px; }
   .atlas-count { display: none !important; }
+  .graph-modes { top: 8px; left: 8px; gap: 6px; }
+  .graph-controls { top: auto; bottom: 8px; right: 8px; }
+  .graph-controls [data-help] { display: none; }
+  .graph-controls [data-graph-zoom="reset"] { border-right: 0; }
+  .atlas-stage:has(.node-panel.is-open) .graph-controls, .atlas-stage:has(.tour-bar:not([hidden])) .graph-controls, .atlas-stage:has(.path-bar:not([hidden])) .graph-controls { visibility: hidden; }
+  .layout-toggle button, .tour-button { min-height: 44px; padding: 0 10px; }
+  .node-card, .minimap { display: none !important; }
+  .tour-bar, .path-bar { bottom: 8px; width: calc(100% - 16px); padding: 12px; }
+  .tour-text { font-size: 14px; }
+  .shortcuts dl div { grid-template-columns: 1fr; gap: 2px; }
+  .axis-lane text { font-size: 13px; }
+  .axis-year text { font-size: 15px; }
   .graph-instruction { display: none; }
   .node-panel { top: auto; right: 12px; bottom: 12px; width: calc(100% - 24px); max-height: 46%; padding: 20px; overflow-y: auto; }
   .page-hero, .timeline-hero { padding-block: 38px; }
