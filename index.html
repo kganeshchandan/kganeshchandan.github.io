@@ -10,12 +10,23 @@
   <meta property="og:description" content="My research, projects and papers, the places I've worked, and how they connect.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kganeshchandan.github.io/">
+  <meta property="og:image" content="https://kganeshchandan.github.io/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Ganesh Chandan, Senior Software Engineer at Samsung Research India, beside a map of connected work.">
+  <meta name="twitter:card" content="summary_large_image">
   <title>Ganesh Chandan</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Person","name":"Ganesh Chandan","jobTitle":"Senior Software Engineer","worksFor":{"@type":"Organization","name":"Samsung Research India"},"alumniOf":{"@type":"CollegeOrUniversity","name":"IIIT Hyderabad"},"url":"https://kganeshchandan.github.io/","email":"mailto:k.ganesh.chandan@gmail.com","sameAs":["https://github.com/kganeshchandan","https://www.linkedin.com/in/ganesh-chandan-kanakala-a764a0206/","https://orcid.org/0000-0002-4469-1857"]}
+  </script>
   <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
+  <script src="atlas.js" defer></script>
 </head>
 <body class="graph-page">
   <a class="skip-link" href="#atlas">Skip to atlas</a>
@@ -64,33 +75,85 @@
             <pattern id="tone-dots" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fdfdfb"/><circle cx="3" cy="3" r="1.25" fill="#0d0d0d"/></pattern>
             <pattern id="tone-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#fdfdfb"/><rect width="1.6" height="7" fill="#0d0d0d"/></pattern>
           </defs>
+          <g class="axis-layer" data-axis></g>
+          <g class="hull-layer" data-hulls></g>
           <g data-edges></g>
+          <g class="particle-layer" data-particles></g>
           <g data-nodes></g>
         </svg>
+        <div class="graph-modes">
+          <div class="layout-toggle" role="group" aria-label="Layout">
+            <button type="button" data-layout="network" aria-pressed="true">Network</button>
+            <button type="button" data-layout="timeline" aria-pressed="false">Timeline</button>
+          </div>
+          <button class="tour-button" type="button" data-tour aria-pressed="false"><span aria-hidden="true">►</span> Tour</button>
+        </div>
         <div class="graph-controls" aria-label="Graph view controls">
           <button type="button" data-graph-zoom="in" aria-label="Zoom graph in">+</button>
           <button type="button" data-graph-zoom="out" aria-label="Zoom graph out">−</button>
           <button type="button" data-graph-zoom="reset">Reset</button>
+          <button type="button" data-help aria-label="Keyboard shortcuts">?</button>
         </div>
-        <p class="graph-instruction">Drag nodes · Drag canvas to pan · Scroll or double-click to zoom</p>
+        <p class="graph-instruction">Click a node for details · Shift-click another to trace the link · Press ? for shortcuts</p>
+        <div class="node-card" data-node-card hidden>
+          <span data-card-type></span>
+          <strong data-card-title></strong>
+          <p data-card-text></p>
+          <small data-card-hint></small>
+        </div>
+        <div class="tour-bar" data-tour-bar hidden>
+          <div class="tour-progress"><i data-tour-progress></i></div>
+          <p class="tour-step" data-tour-step></p>
+          <p class="tour-text" data-tour-text aria-live="polite"></p>
+          <div class="tour-actions">
+            <button type="button" data-tour-prev>Back</button>
+            <button type="button" data-tour-next>Next</button>
+            <button type="button" data-tour-stop>Stop</button>
+          </div>
+        </div>
+        <div class="path-bar" data-path-bar hidden>
+          <p class="path-label">How they connect</p>
+          <p class="path-text" data-path-text aria-live="polite"></p>
+          <button type="button" data-path-clear>Clear</button>
+        </div>
+        <svg class="minimap" data-minimap aria-hidden="true" hidden></svg>
         <aside class="node-panel" data-node-panel aria-live="polite" aria-labelledby="node-panel-title" tabindex="-1">
           <button class="panel-close" type="button" data-panel-close aria-label="Close details">×</button>
           <p class="eyebrow" data-panel-type>Atlas guide</p>
           <h2 id="node-panel-title" data-panel-title>Select a node</h2>
           <p data-panel-description>Click any circle to see what it is and what it connects to.</p>
           <dl class="panel-meta" data-panel-meta></dl>
-          <a class="panel-link" data-panel-link href="timeline.html" hidden>Explore <span aria-hidden="true">→</span></a>
+          <div class="panel-actions">
+            <a class="panel-link" data-panel-link href="timeline.html" hidden>Explore <span aria-hidden="true">→</span></a>
+            <button class="panel-button" type="button" data-panel-expand aria-pressed="false" hidden></button>
+            <button class="panel-button" type="button" data-panel-share>Copy link</button>
+          </div>
         </aside>
       </div>
 
       <div class="atlas-legend" aria-label="Graph legend">
-        <span><i class="legend-domain"></i>Domain</span>
-        <span><i class="legend-project"></i>Project</span>
-        <span><i class="legend-paper"></i>Publication</span>
-        <span><i class="legend-place"></i>Institution</span>
+        <button type="button" data-legend="domain" aria-pressed="false"><i class="legend-domain"></i>Domain</button>
+        <button type="button" data-legend="project" aria-pressed="false"><i class="legend-project"></i>Project</button>
+        <button type="button" data-legend="paper" aria-pressed="false"><i class="legend-paper"></i>Publication</button>
+        <button type="button" data-legend="place" aria-pressed="false"><i class="legend-place"></i>Institution</button>
+        <button type="button" data-legend="repo" aria-pressed="false" hidden><i class="legend-repo"></i>Repository</button>
         <span class="atlas-count" data-result-count aria-live="polite">20 nodes · 28 relationships</span>
       </div>
     </div>
+    <dialog class="shortcuts" data-shortcuts aria-labelledby="shortcuts-title">
+      <h2 id="shortcuts-title">Keyboard shortcuts</h2>
+      <dl>
+        <div><dt><kbd>/</kbd></dt><dd>Search</dd></div>
+        <div><dt><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move between nodes</dd></div>
+        <div><dt><kbd>Enter</kbd></dt><dd>Open the focused node</dd></div>
+        <div><dt><kbd>Shift</kbd> + click</dt><dd>Trace how two nodes connect</dd></div>
+        <div><dt><kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></dt><dd>Zoom in, zoom out, reset</dd></div>
+        <div><dt><kbd>T</kbd></dt><dd>Switch between network and timeline</dd></div>
+        <div><dt><kbd>P</kbd></dt><dd>Play or stop the tour</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Close whatever is open</dd></div>
+      </dl>
+      <button type="button" data-shortcuts-close>Close</button>
+    </dialog>
   </main>
 </body>
 </html>
