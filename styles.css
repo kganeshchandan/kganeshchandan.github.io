@@ -525,10 +525,10 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .site-nav a[aria-current="page"] { color: var(--signal); border-top-color: var(--ink); }
   .graph-home { padding-bottom: 18px; }
   .graph-home { gap: 10px; }
-  .atlas-intro { font-size: 13px; line-height: 1.4; }
-  .atlas-intro > span { display: none; }
+  .atlas-intro { gap: 2px 12px; font-size: 13px; line-height: 1.4; }
+  .atlas-intro > span { order: 3; flex-basis: 100%; }
   .atlas-toolbar { padding: 6px 6px 6px 8px; gap: 6px; }
-  .atlas-filters { min-width: 0; flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .atlas-filters { min-width: 0; flex: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 78%, transparent); mask-image: linear-gradient(90deg, #000 78%, transparent); }
   .atlas-filters::-webkit-scrollbar { display: none; }
   .filter-button { flex: none; min-height: 44px; padding: 6px 10px; }
   .filter-button:focus-visible { outline: 2px solid var(--yellow); outline-offset: -6px; }
@@ -562,7 +562,9 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
   .page-intro > p, .timeline-intro > p { font-size: 16px; }
   .hero-links { width: auto; min-width: 0; max-width: 100%; align-items: stretch; flex-direction: column; }
   .button { width: auto; max-width: 100%; }
+  .resume-facts { grid-template-columns: minmax(0, 1fr); }
   .resume-facts article { padding: 24px var(--inset) 26px; }
+  .resume-facts article:nth-child(2) { border-top: 0; }
   .resume-facts h2 { margin-top: 20px; font-size: 21px; letter-spacing: -.03em; }
   .resume-facts p { font-size: 14px; }
   .resume-section { padding-block: 38px; display: block; }
@@ -609,4 +611,37 @@ a[target="_blank"]::after { display: inline; flex: none; content: "\00a0→"; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Print: show everything that scrolls in, drop the chrome, and print dark text on white */
+@media print {
+  @page { margin: 16mm; }
+  :root { color-scheme: light; --paper: #fff; --paper-deep: #fff; --raised: #fff; --ink: #1d2021; --muted: #504945; --line: #bdae93; --signal: #af3a03; --yellow: #1d2021; --acid: #79740e; --aqua: #427b58; --blue: #076678; }
+  html, body { background: #fff !important; color: var(--ink); }
+  .reveal { opacity: 1 !important; transform: none !important; }
+  .site-header, .scroll-progress, .skip-link, .menu-toggle, .hero-links, .pdf-section, .year-dial, .copy-email, .site-footer .footer-links { display: none !important; }
+  .page-main, .timeline-main, .contact-main { width: 100%; padding: 0; }
+  .page-hero, .timeline-hero, .resume-section, .resume-facts article, .contact-panel, .timeline-note { padding: 18px 0; border: 0; background: none; box-shadow: none; }
+  .page-hero, .timeline-hero { gap: 12px; grid-template-columns: 1fr; }
+  .page-hero h1, .timeline-hero h1 { font-size: 34pt; }
+  .resume-facts { border: 0; }
+  .resume-rows article, .publication-rows li, .repo-entry, .resume-facts article, .skills-grid p { break-inside: avoid; }
+  .resume-section > header, .resume-facts span, .resume-rows h3 { break-after: avoid; }
+  .resume-section > header { break-inside: avoid; margin-bottom: 10px; }
+  .resume-section { padding: 12px 0; }
+  .resume-section > header h2 { font-size: 20pt; }
+  .resume-rows article { padding: 0 0 14px; gap: 6px; }
+  .resume-rows article + article { padding-top: 12px; }
+  .resume-rows h3, .publication-rows strong { font-size: 13.5pt; }
+  .resume-rows h4 { margin: 2px 0 8px; font-size: 10.5pt; }
+  .resume-rows p, .skills-grid p { font-size: 10pt; }
+  .resume-rows ul { margin-top: 8px; }
+  .publication-rows li { padding: 8px 0; }
+  .skills-grid p { padding: 6px 0; }
+  .resume-facts { grid-template-columns: 1fr 1fr; }
+  .resume-facts article { padding: 10px 16px 10px 0; }
+  .resume-facts h2 { margin-top: 8px; }
+  .timeline-body { display: block; margin: 0; }
+  .site-footer { min-height: 0; padding: 12px 0; background: none; border-top: 1px solid var(--line); }
+  a[href^="http"]::after { content: none; }
 }
